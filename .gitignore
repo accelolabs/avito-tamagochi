@@ -1,0 +1,15 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Backend build artifacts
+/backend/api
+/backend/bin/
+/backend/coverage.out
+
+# Common local files
+*.log
+.DS_Store
+.idea/
+.vscode/
