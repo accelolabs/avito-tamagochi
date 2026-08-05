@@ -1,6 +1,8 @@
 services:
   postgres:
     image: postgres:18-alpine
+    ports:
+      - "5436:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-tamagotchi}
       POSTGRES_USER: ${POSTGRES_USER:-tamagotchi}
@@ -22,8 +24,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    expose:
-      - "8080"
+    ports:
+      - "8080:8080"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
       interval: 5s
