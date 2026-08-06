@@ -1,0 +1,673 @@
+openapi: 3.0.3
+
+info:
+  title: Avito Tamagotchi API
+  version: 1.0.0
+  description: HTTP API and WebSocket event contract for the Avito Tamagotchi MVP.
+
+servers:
+  - url: /api/v1
+    description: Application API through Nginx
+
+security:
+  - sessionCookie: []
+
+paths:
+  /auth/register:
+    post:
+      operationId: registerUser
+      summary: Register a user, pet, and session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered and authenticated
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/EmailAlreadyExistsError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      summary: Log in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: User authenticated
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/InvalidCredentialsError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      summary: Log out
+      description: Always succeeds, even when the session is missing or expired.
+      security: []
+      responses:
+        "204":
+          description: Session deleted when present and cookie cleared
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/ExpiredSessionCookie"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /pet:
+    get:
+      operationId: getPet
+      summary: Get the current pet state
+      responses:
+        "200":
+          description: Current pet state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetState"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /pet/actions:
+    post:
+      operationId: performPetAction
+      summary: Perform a care action with the pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetActionRequest"
+      responses:
+        "200":
+          description: Action performed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetActionResult"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "429":
+          $ref: "#/components/responses/CooldownError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: Get today's tasks
+      description: >-
+        Returns three fixed task templates and lazily creates progress for the
+        current Moscow day. No background scheduler is required.
+      responses:
+        "200":
+          description: Active and completed tasks for the current Moscow day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TasksResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /demo/activities:
+    post:
+      operationId: simulateAvitoActivity
+      summary: Simulate an activity performed on Avito
+      description: >-
+        Demo-only endpoint. The backend synchronously applies the platform event
+        to matching tasks and publishes one game.updated snapshot through WebSocket.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoActivityRequest"
+      responses:
+        "204":
+          description: Event processed or an identical event was already processed
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          $ref: "#/components/responses/EventConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /rewards:
+    get:
+      operationId: listRewards
+      summary: Get personalized rewards and their availability
+      responses:
+        "200":
+          description: Two non-expiring rewards with the user's current progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardsResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /rewards/{rewardId}/claim:
+    post:
+      operationId: claimReward
+      summary: Claim an available reward
+      description: Repeated claims return the same user-bound reward.
+      parameters:
+        - name: rewardId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reward claimed or previously claimed by the same user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reward"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/RewardLockedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      summary: Get the total XP leaderboard
+      responses:
+        "200":
+          description: Top ten users and the current user's position
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Leaderboard"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /summary/daily:
+    get:
+      operationId: getDailySummary
+      summary: Get today's progress summary
+      responses:
+        "200":
+          description: Summary from 00:00 Europe/Moscow until now
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailySummary"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ws:
+    get:
+      operationId: connectWebSocket
+      summary: Connect to real-time server events
+      description: >-
+        Upgrades the HTTP connection to WebSocket. The server does not send an
+        initial snapshot. On reconnection, the client reloads current state over HTTP.
+      servers:
+        - url: /
+          description: WebSocket endpoint through Nginx
+      x-websocket-messages:
+        $ref: "#/components/schemas/GameUpdatedEvent"
+      responses:
+        "101":
+          description: WebSocket connection established
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: Opaque session token with a fixed seven-day lifetime.
+
+  headers:
+    SessionCookie:
+      description: >-
+        HttpOnly session cookie valid for seven days. Uses Path=/,
+        SameSite=Lax, Max-Age=604800, Expires, and Secure in production.
+      schema:
+        type: string
+    ExpiredSessionCookie:
+      description: Session cookie cleared with Max-Age=0 and an Expires date in the past.
+      schema:
+        type: string
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Trimmed and normalized to lowercase by the backend.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 32
+          pattern: "^[A-Za-z_-]+$"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Trimmed and normalized to lowercase by the backend.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+
+    User:
+      type: object
+      required: [id, email, displayName, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PetState:
+      type: object
+      description: Complete authoritative state of K1-T4.
+      required: [id, name, level, totalXp, nextLevelXp, stage, batteryLevel, status, isActionAvailable, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Кита (K1-T4)
+        level:
+          type: integer
+          minimum: 1
+        totalXp:
+          type: integer
+          minimum: 0
+          description: Total XP accumulated during the pet's lifetime.
+        nextLevelXp:
+          type: integer
+          minimum: 1
+          description: Cumulative XP threshold of the next level.
+        stage:
+          type: string
+          enum: [egg, child, teen, adult]
+          description: Egg at level 1, child at 2-3, teen at 4-6, adult at 7+.
+        batteryLevel:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Decreases by 20 at 00:00 Europe/Moscow every day.
+        status:
+          type: string
+          enum: [happy, normal, tired, exhausted]
+          description: Server-derived visual state based on the battery level.
+        isActionAvailable:
+          type: boolean
+        cooldownEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    PetActionRequest:
+      type: object
+      required: [actionType]
+      properties:
+        actionType:
+          type: string
+          enum: [charge]
+
+    PetActionResult:
+      type: object
+      required: [xpAwarded, batteryAdded, levelUp, stageChanged, pet]
+      properties:
+        xpAwarded:
+          type: integer
+          minimum: 0
+        batteryAdded:
+          type: integer
+          minimum: 0
+          maximum: 25
+          description: Actual battery increase after applying the upper limit of 100.
+        levelUp:
+          type: boolean
+        stageChanged:
+          type: boolean
+        pet:
+          $ref: "#/components/schemas/PetState"
+
+    DemoActivityRequest:
+      type: object
+      required: [eventId, activityType]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Unique platform event identifier used to reject duplicate effects.
+        activityType:
+          $ref: "#/components/schemas/ActivityType"
+
+    ActivityType:
+      type: string
+      enum: [listingViewed, favoriteAdded, listingPublished]
+
+    Task:
+      type: object
+      required: [id, title, description, activityType, progress, target, xpReward, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        activityType:
+          $ref: "#/components/schemas/ActivityType"
+        progress:
+          type: integer
+          minimum: 0
+        target:
+          type: integer
+          minimum: 1
+        xpReward:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [active, completed]
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TasksResponse:
+      type: object
+      required: [items, resetsAt]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        resetsAt:
+          type: string
+          format: date-time
+          description: Next task reset at 00:00 Europe/Moscow.
+
+    Reward:
+      type: object
+      description: Non-transferable entitlement bound to the authenticated user.
+      required: [id, type, title, description, requiredLevel, currentXp, requiredXp, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [listingPromotion, deliveryDiscount]
+        title:
+          type: string
+        description:
+          type: string
+        requiredLevel:
+          type: integer
+          minimum: 1
+        currentXp:
+          type: integer
+          minimum: 0
+        requiredXp:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [locked, available, claimed]
+        claimedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RewardsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reward"
+
+    Leaderboard:
+      type: object
+      required: [entries, currentUser]
+      properties:
+        entries:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        currentUser:
+          $ref: "#/components/schemas/LeaderboardEntry"
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, displayName, level, totalXp]
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        level:
+          type: integer
+          minimum: 1
+        totalXp:
+          type: integer
+          minimum: 0
+
+    DailySummary:
+      type: object
+      required: [date, xpEarned, chargesPerformed, completedTaskTitles, unlockedRewardTitles]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Current date in Europe/Moscow.
+        xpEarned:
+          type: integer
+          minimum: 0
+        chargesPerformed:
+          type: integer
+          minimum: 0
+        completedTaskTitles:
+          type: array
+          items:
+            type: string
+        unlockedRewardTitles:
+          type: array
+          items:
+            type: string
+
+    GameState:
+      type: object
+      required: [pet, tasks, rewards, summary]
+      properties:
+        pet:
+          $ref: "#/components/schemas/PetState"
+        tasks:
+          $ref: "#/components/schemas/TasksResponse"
+        rewards:
+          $ref: "#/components/schemas/RewardsResponse"
+        summary:
+          $ref: "#/components/schemas/DailySummary"
+
+    GameUpdatedEvent:
+      type: object
+      description: Complete game snapshot sent after an external platform event.
+      required: [type, eventId, occurredAt, data]
+      properties:
+        type:
+          type: string
+          enum: [game.updated]
+        eventId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        data:
+          $ref: "#/components/schemas/GameState"
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - validation_error
+            - unauthorized
+            - invalid_credentials
+            - not_found
+            - email_already_exists
+            - reward_locked
+            - event_conflict
+            - cooldown_active
+            - internal_error
+        message:
+          type: string
+
+  responses:
+    ValidationError:
+      description: Request validation failed (`validation_error`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnauthorizedError:
+      description: Authentication is required or the session has expired (`unauthorized`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InvalidCredentialsError:
+      description: Invalid email or password (`invalid_credentials`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFoundError:
+      description: Resource not found (`not_found`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    EmailAlreadyExistsError:
+      description: The normalized email is already registered (`email_already_exists`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RewardLockedError:
+      description: The reward exists but is not available yet (`reward_locked`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    EventConflictError:
+      description: The event ID was previously used with different event data (`event_conflict`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    CooldownError:
+      description: The pet action is temporarily unavailable (`cooldown_active`)
+      headers:
+        Retry-After:
+          description: Seconds until the action becomes available
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Internal server error (`internal_error`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
