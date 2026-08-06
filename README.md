@@ -37,6 +37,9 @@ MVP виртуального питомца, который развиваетс
 ```bash
 cp .env.example .env
 docker compose up --build
+
+# Для запуска с демонстрационными пользователями лидерборда
+docker compose --profile demo up --build
 ```
 
 Приложение будет доступно по адресу <http://localhost:3000>.
@@ -44,6 +47,27 @@ docker compose up --build
 ```bash
 docker compose ps
 docker compose down
+```
+
+PostgreSQL доступен только внутри Docker-сети и не публикует порт на хост. Схема автоматически применяется одноразовым сервисом `migrate` до запуска backend. Demo-данные включаются только профилем `demo`; повторный запуск безопасен.
+
+Для удаления demo-данных:
+
+```bash
+docker compose run --rm seed cleanup
+```
+
+Для backup без открытого PostgreSQL-порта:
+
+```bash
+mkdir -p backups
+docker compose exec -T postgres pg_dump -U tamagotchi -d tamagotchi > backups/tamagotchi.sql
+```
+
+Для восстановления:
+
+```bash
+docker compose exec -T postgres psql -U tamagotchi -d tamagotchi < backups/tamagotchi.sql
 ```
 
 ## Проверки
@@ -89,7 +113,7 @@ HTTP API использует префикс `/api/v1`. WebSocket доступе
 - завершение авторизации и middleware сессий;
 - игровую прогрессию, задания и безопасную выдачу наград;
 - WebSocket-события, лидерборд и ежедневную сводку;
-- миграции, unit-тесты бизнес-логики и конфигурацию Go-линтера;
+- unit-тесты бизнес-логики и конфигурацию Go-линтера;
 - публичный стенд.
 
 ## Документация

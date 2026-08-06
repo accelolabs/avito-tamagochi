@@ -8,6 +8,9 @@
 /backend/bin/
 /backend/coverage.out
 
+# Local database backups
+/backups/
+
 # Common local files
 *.log
 .DS_Store

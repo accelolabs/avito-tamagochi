@@ -24,6 +24,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     healthcheck:
@@ -31,6 +33,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrate:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["migrate"]
+    restart: "no"
+
+  seed:
+    profiles: ["demo"]
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    entrypoint: ["seed"]
+    restart: "no"
 
   frontend:
     build:
