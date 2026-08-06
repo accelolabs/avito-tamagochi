@@ -2,11 +2,18 @@ package auth
 
 import "time"
 
+// --- REQUEST/RESPONSE DTOs ---
+
 type RegisterRequest struct {
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	DisplayName string `json:"displayName"`
-	PetName     string `json:"petName"`
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=8"`
+	DisplayName string `json:"displayName" binding:"required"`
+	PetName     string `json:"petName" binding:"required"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 type AuthResponse struct {
@@ -14,11 +21,13 @@ type AuthResponse struct {
 	Pet  Pet  `json:"pet"`
 }
 
+// --- DOMAIN MODELS ---
+
 type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
 	DisplayName  string    `json:"displayName"`
-	PasswordHash string
+	PasswordHash string    `json:"-"` // Omit from JSON responses
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
