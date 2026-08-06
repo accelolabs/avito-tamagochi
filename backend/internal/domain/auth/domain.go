@@ -5,20 +5,14 @@ import "time"
 // --- REQUEST/RESPONSE DTOs ---
 
 type RegisterRequest struct {
-	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
-	DisplayName string `json:"displayName" binding:"required"`
-	PetName     string `json:"petName" binding:"required"`
+	Email       string `json:"email" binding:"required,email,max=254"`
+	Password    string `json:"password" binding:"required,min=8,max=128"`
+	DisplayName string `json:"displayName" binding:"required,min=2,max=32,alphanum"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-type AuthResponse struct {
-	User User `json:"user"`
-	Pet  Pet  `json:"pet"`
+	Email    string `json:"email" binding:"required,email,max=254"`
+	Password string `json:"password" binding:"required,min=8,max=128"`
 }
 
 // --- DOMAIN MODELS ---
@@ -27,21 +21,22 @@ type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
 	DisplayName  string    `json:"displayName"`
-	PasswordHash string    `json:"-"` // Omit from JSON responses
+	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type Pet struct {
-	ID                string    `json:"id"`
-	OwnerID           string    `json:"ownerId"`
-	Name              string    `json:"name"`
-	Level             int       `json:"level"`
-	XP                int       `json:"xp"`
-	XPToNextLevel     int       `json:"xpToNextLevel"`
-	BatteryLevel      int       `json:"batteryLevel"`
-	Status            string    `json:"status"`
-	IsActionAvailable bool      `json:"isActionAvailable"`
-	UpdatedAt         time.Time `json:"updatedAt"`
+	ID                string
+	OwnerID           string
+	Name              string
+	Level             int
+	TotalXP           int
+	NextLevelXP       int
+	Stage             string
+	BatteryLevel      int
+	Status            string
+	IsActionAvailable bool
+	UpdatedAt         time.Time
 }
 
 type Session struct {
@@ -49,4 +44,11 @@ type Session struct {
 	UserID    string
 	ExpiresAt time.Time
 	CreatedAt time.Time
+}
+
+// --- ERROR RESPONSE ---
+
+type ErrorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }

@@ -30,22 +30,18 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := runMigrations(db); err != nil {
-		log.Fatalf("could not run migrations: %v", err)
-	}
-
 	authRepo := repository.NewPgRepository(db)
 	authService := service.NewAuthService(authRepo)
 	authHandler := handler.NewAuthHandler(authService)
 
 	router := gin.Default()
-	api := router.Group("/api")
+	v1 := router.Group("/api/v1")
 	{
-		api.GET("/health", func(c *gin.Context) {
+		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
 		})
 
-		auth := api.Group("/auth")
+		auth := v1.Group("/auth")
 		{
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
@@ -57,42 +53,4 @@ func main() {
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func runMigrations(db *sql.DB) error {
-	_, err := db.Exec(`
-		CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-		CREATE TABLE IF NOT EXISTS users (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			email TEXT NOT NULL UNIQUE,
-			display_name TEXT NOT NULL,
-			password_hash TEXT NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-		);
-
-		CREATE TABLE IF NOT EXISTS pets (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-			name TEXT NOT NULL,
-			level INT NOT NULL DEFAULT 1,
-			xp INT NOT NULL DEFAULT 0,
-			xp_to_next_level INT NOT NULL DEFAULT 100,
-			battery_level INT NOT NULL DEFAULT 100,
-			status TEXT NOT NULL DEFAULT 'happy',
-			is_action_available BOOLEAN NOT NULL DEFAULT TRUE,
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-		);
-
-		CREATE TABLE IF NOT EXISTS sessions (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-			expires_at TIMESTAMPTZ NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-		);
-
-		CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-		CREATE INDEX IF NOT EXISTS idx_pets_owner_id ON pets(owner_id);
-	`)
-	return err
 }

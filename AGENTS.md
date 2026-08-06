@@ -34,3 +34,14 @@ cd frontend && npm run lint && npm run build
 - Do not commit `.env`, secrets, binaries, `node_modules`, or `dist`.
 - Do not run `docker compose down -v` without explicit permission.
 - Do not modify unrelated files or add unnecessary dependencies.
+
+## Agent Activity
+
+- Implemented `register`, `login`, and `logout` endpoints for the `auth` domain.
+- Aligned the implementation with the provided `openapi.yaml` specification.
+- Ensured the use of Argon2id for password hashing and verification.
+- Implemented email normalization (trimming and lowercasing).
+- Set up session management using HttpOnly cookies.
+- Created a transactional registration process that creates a user and a pet.
+- Implemented the specified error handling and response structure.
+- Updated the database schema and main application to support the new functionality.
