@@ -25,7 +25,7 @@
 }
 
 .auth__toggle {
-    position: relative;             /* для позиционирования слайдера */
+    position: relative;
     display: flex;
     background-color: var(--color-bg);
     border-radius: 8px;
@@ -39,10 +39,9 @@
     background: transparent;
     font-size: 16px;
     font-weight: 500;
-    color: var(--color-text-secondary);
     cursor: pointer;
     transition: color 0.3s;
-    position: relative;  /* чтобы перекрыть слайдер по z-index, если нужно */
+    position: relative;
     z-index: 1;
 }
 
@@ -50,9 +49,9 @@
     position: absolute;
     top: 4px;
     bottom: 4px;
-    left: 4px;                /* по умолчанию под первой кнопкой ("Вход") */
-    width: calc(50% - 4px);   /* 50% минус отступы */
-    background-color: white;
+    left: 4px;
+    width: calc(50% - 4px);
+    background-color: var(--color-bg-default);
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -65,6 +64,7 @@
 
 .auth__toggle-button--active {
     color: var(--color-text-primary);
+    font-weight: 800;
 }
 
 .auth__form-container {

@@ -37,83 +37,87 @@ const Auth = () => {
                         Твой виртуальный питомец в мире Авито
                     </h1>
                 </div>
+
                 <div className="auth__toggle">
                     <button
-                        className={`auth__toggle-button ${!isRegistration ? 'auth__toggle-button--active' : ''}`}
-                        onClick={() => setIsRegistration(true)}>
+                        className={`auth__toggle-button ${isRegistration ? 'auth__toggle-button--active' : ''}`}
+                        onClick={() => setIsRegistration(true)}
+                    >
                         Регистрация
                     </button>
                     <button
-                        className={`auth__toggle-button ${isRegistration ? 'auth__toggle-button--active' : ''}`}
-                        onClick={() => setIsRegistration(false)}>
+                        className={`auth__toggle-button ${!isRegistration ? 'auth__toggle-button--active' : ''}`}
+                        onClick={() => setIsRegistration(false)}
+                    >
                         Вход
                     </button>
                     <div className={`auth__toggle-slider ${!isRegistration ? 'auth__toggle-slider--right' : ''}`} />
                 </div>
 
                 <div className="auth__main">
-                    {isRegistration ? <Registration /> : <Login/>}
+                    {isRegistration ? <Registration /> : <Login />}
                 </div>
-                <footer className='auth__footer'>© 2026 Avito Tamagotchi</footer>
+
+                <footer className="auth__footer">© 2026 Avito Tamagotchi</footer>
             </div>
         </div>
-    )
-}
+    );
+};
 
 const Registration = () => {
     return (
         <div className="auth__form-container">
-                <form className='auth__form'>
-                    <div className="auth__field">
-                        <label htmlFor="userName">Имя пользователя</label>
-                        <input type="text" name="userName" id="userName" placeholder="Ваше имя"/>
-                    </div>
-
-                    <div className="auth__field">
-                        <label htmlFor="userEmail">Электронная почта</label>
-                        <input type="email" name="userEmail" id="userEmail" placeholder="mail@example.ru"/>
-                    </div>
-
-                    <div className="auth__field">
-                        <label htmlFor="userPassword">Пароль</label>
-                        <input type="password" name="userPassword" id="userPassword" placeholder="••••••••"/>
-                    </div>
-
-                    <button className="auth__submit">
-                        Зарегистрироваться
-                        <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6.75 13.5V12H12V12V12V1.5V1.5V1.5H6.75V0H12C12.4125 0 12.7656 0.146875 13.0594 0.440625C13.3531 0.734375 13.5 1.0875 13.5 1.5V12C13.5 12.4125 13.3531 12.7656 13.0594 13.0594C12.7656 13.3531 12.4125 13.5 12 13.5H6.75V13.5M5.25 10.5L4.21875 9.4125L6.13125 7.5H0V6H6.13125L4.21875 4.0875L5.25 3L9 6.75L5.25 10.5V10.5" fill='currentColor' />
-                        </svg>
-                    </button>
-                </form>
-                <div className="auth__form-footer">Уже есть аккаунт? <span className="auth__footer-link">Войти</span></div>
+            <form className="auth__form">
+                <div className="auth__field">
+                    <label htmlFor="userName">Имя пользователя</label>
+                    <input type="text" name="userName" id="userName" placeholder="Ваше имя" />
+                </div>
+                <div className="auth__field">
+                    <label htmlFor="userEmail">Электронная почта</label>
+                    <input type="email" name="userEmail" id="userEmail" placeholder="mail@example.ru" />
+                </div>
+                <div className="auth__field">
+                    <label htmlFor="userPassword">Пароль</label>
+                    <input type="password" name="userPassword" id="userPassword" placeholder="••••••••" />
+                </div>
+                <button className="auth__submit">
+                    Зарегистрироваться
+                    <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6.75 13.5V12H12V12V12V1.5V1.5V1.5H6.75V0H12C12.4125 0 12.7656 0.146875 13.0594 0.440625C13.3531 0.734375 13.5 1.0875 13.5 1.5V12C13.5 12.4125 13.3531 12.7656 13.0594 13.0594C12.7656 13.3531 12.4125 13.5 12 13.5H6.75V13.5M5.25 10.5L4.21875 9.4125L6.13125 7.5H0V6H6.13125L4.21875 4.0875L5.25 3L9 6.75L5.25 10.5V10.5" fill="currentColor" />
+                    </svg>
+                </button>
+            </form>
+            <div className="auth__form-footer">
+                Уже есть аккаунт? <span className="auth__footer-link">Войти</span>
             </div>
-    )
-}
+        </div>
+    );
+};
 
 const Login = () => {
     return (
         <div className="auth__form-container">
-                <form className="auth__form">
-                    <div className="auth__field">
-                        <label htmlFor="userEmail">Электронная почта</label>
-                        <input type="email" name="userEmail" id="userEmail" placeholder="mail@example.ru"/>
-                    </div>
-                    <div className="auth__field">
-                        <label htmlFor="userPassword">Пароль</label>
-                        <input type="password" name="userPassword" id="userPassword" placeholder="••••••••"/>
-                    </div>
-
-                    <button className="auth__submit">
-                        Войти
-                        <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6.75 13.5V12H12V12V12V1.5V1.5V1.5H6.75V0H12C12.4125 0 12.7656 0.146875 13.0594 0.440625C13.3531 0.734375 13.5 1.0875 13.5 1.5V12C13.5 12.4125 13.3531 12.7656 13.0594 13.0594C12.7656 13.3531 12.4125 13.5 12 13.5H6.75V13.5M5.25 10.5L4.21875 9.4125L6.13125 7.5H0V6H6.13125L4.21875 4.0875L5.25 3L9 6.75L5.25 10.5V10.5" fill='currentColor'/>
-                        </svg>
-                    </button>
-                </form>
-                <div className="auth__form-footer">Нет аккаунта? <span className="auth__footer-link">Зарегистрироваться</span></div>
+            <form className="auth__form">
+                <div className="auth__field">
+                    <label htmlFor="userEmail">Электронная почта</label>
+                    <input type="email" name="userEmail" id="userEmail" placeholder="mail@example.ru" />
+                </div>
+                <div className="auth__field">
+                    <label htmlFor="userPassword">Пароль</label>
+                    <input type="password" name="userPassword" id="userPassword" placeholder="••••••••" />
+                </div>
+                <button className="auth__submit">
+                    Войти
+                    <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6.75 13.5V12H12V12V12V1.5V1.5V1.5H6.75V0H12C12.4125 0 12.7656 0.146875 13.0594 0.440625C13.3531 0.734375 13.5 1.0875 13.5 1.5V12C13.5 12.4125 13.3531 12.7656 13.0594 13.0594C12.7656 13.3531 12.4125 13.5 12 13.5H6.75V13.5M5.25 10.5L4.21875 9.4125L6.13125 7.5H0V6H6.13125L4.21875 4.0875L5.25 3L9 6.75L5.25 10.5V10.5" fill="currentColor" />
+                    </svg>
+                </button>
+            </form>
+            <div className="auth__form-footer">
+                Нет аккаунта? <span className="auth__footer-link">Зарегистрироваться</span>
             </div>
-    )
-}
+        </div>
+    );
+};
 
 export default Auth;
