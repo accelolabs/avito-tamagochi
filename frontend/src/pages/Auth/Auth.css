@@ -1,0 +1,130 @@
+.auth__page {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 32px;
+}
+
+.auth__container {
+    width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth__header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth__catch-phrase {
+    font-size: 16px;
+    font-weight: 300;
+}
+
+.auth__toggle {
+    position: relative;             /* для позиционирования слайдера */
+    display: flex;
+    background-color: var(--color-bg);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.auth__toggle-button {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color 0.3s;
+    position: relative;  /* чтобы перекрыть слайдер по z-index, если нужно */
+    z-index: 1;
+}
+
+.auth__toggle-slider {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;                /* по умолчанию под первой кнопкой ("Вход") */
+    width: calc(50% - 4px);   /* 50% минус отступы */
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    z-index: 0;
+}
+
+.auth__toggle-slider--right {
+    transform: translateX(100%);
+}
+
+.auth__toggle-button--active {
+    color: var(--color-text-primary);
+}
+
+.auth__form-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.auth__form {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.auth__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth__field label {
+    line-height: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    padding-bottom: 12px;
+}
+
+.auth__field input {
+    border: none;
+    background-color: var(--color-bg);
+    border-radius: 6px;
+    padding: 14px 4px 14px 16px;
+}
+
+.auth__submit {
+    border: none;
+    border-radius: 6px;
+    background-color: var(--color-primary);
+    padding: 12px;
+    color: var(--color-text-tetriary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth__form-footer {
+    padding: 14px;
+    background-color: var(--color-bg);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.auth__footer-link {
+    color: var(--color-primary);
+}
+
+.auth__footer {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    text-align: center;
+}
