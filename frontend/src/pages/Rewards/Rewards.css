@@ -1,0 +1,100 @@
+.rewards-page {
+    padding-left: 256px;
+    background-color: var(--color-bg);
+    min-height: 100vh;
+}
+
+.rewards {
+    padding: 52px 84px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.rewards__header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rewards__title {
+    margin: 0;
+    font-size: 24px;
+    line-height: 24px;
+    font-weight: 800;
+}
+
+.rewards__description {
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 300;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.rewards__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+    gap: 24px;
+}
+
+.rewards__card {
+    background-color: var(--color-bg-default);
+    border-radius: 12px;
+    padding: 24px;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+}
+
+.rewards__card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.rewards__icon {
+    background-color: var(--color-bg);
+    width: 64px;
+    height: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    color: var(--color-primary);
+}
+
+.rewards__status {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background-color: var(--color-bg);
+    padding: 4px 12px;
+    border-radius: 18px;
+    color: var(--color-primary);
+}
+
+.rewards__card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.rewards__card-title {
+    margin: 0;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 700;
+}
+
+.rewards__card-description {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--color-text-secondary);
+}
+
+.rewards__card-fill {
+    height: 12px;
+    background-color: var(--color-primary);
+    border-radius: 6px;
+}
