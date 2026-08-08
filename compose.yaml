@@ -26,11 +26,11 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/v1/health"]
-      interval: 5s
+      interval: 20s
       timeout: 5s
       retries: 5
 
@@ -67,7 +67,7 @@ services:
       - "${FRONTEND_PORT:-3000}:80"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
-      interval: 5s
+      interval: 20s
       timeout: 5s
       retries: 5
 
