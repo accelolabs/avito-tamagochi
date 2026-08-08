@@ -7,18 +7,20 @@ import (
 	"os"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
+	authservice "github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	"github.com/google/uuid"
 )
 
 const sessionCookieName = "session_id"
 
 type Handler struct {
-	service auth.Service
+	service authservice.Service
 	secure  bool
 }
 
-func New(service auth.Service) *Handler {
+func New(service authservice.Service) *Handler {
 	return &Handler{service: service, secure: os.Getenv("APP_SECURE_COOKIES") == "true"}
 }
 
@@ -50,11 +52,11 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, errorResponse{Code: code, Message: message})
 }
 
-func toUserResponse(user *auth.User) userResponse {
+func toUserResponse(user *model.User) userResponse {
 	return userResponse{ID: user.ID, Email: user.Email, DisplayName: user.DisplayName, CreatedAt: user.CreatedAt}
 }
 
-func (h *Handler) setSessionCookie(w http.ResponseWriter, session *auth.Session) {
+func (h *Handler) setSessionCookie(w http.ResponseWriter, session *model.Session) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    session.ID.String(),
@@ -83,11 +85,11 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 
 func mapServiceError(w http.ResponseWriter, err error, _ bool) {
 	switch {
-	case errors.Is(err, auth.ErrInvalidInput):
+	case errors.Is(err, autherrors.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
-	case errors.Is(err, auth.ErrEmailAlreadyExists):
+	case errors.Is(err, autherrors.ErrEmailAlreadyExists):
 		writeError(w, http.StatusConflict, "email_already_exists", "email is already registered")
-	case errors.Is(err, auth.ErrInvalidCredentials):
+	case errors.Is(err, autherrors.ErrInvalidCredentials):
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "internal server error")

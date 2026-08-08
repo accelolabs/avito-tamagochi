@@ -10,13 +10,21 @@ import (
 
 	authhandlers "github.com/accelolabs/avito-tamagochi/backend/internal/auth/handlers"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
+	authrepository "github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	gamehandlers "github.com/accelolabs/avito-tamagochi/backend/internal/game/handlers"
+	gameleaderrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/leaderboard/repository"
+	gameleaderservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/leaderboard/service"
 	gamepetrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/repository"
 	gamepetservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
 	gameprogressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
 	gameprogressionservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/service"
+	gamerewardrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/repository"
+	gamerewardservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/service"
+	gamesummaryrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/repository"
+	gamesummaryservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/service"
+	gametaskrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/repository"
+	gametaskservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/service"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/realtime"
 	_ "github.com/lib/pq"
 )
@@ -41,12 +49,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	authService := service.NewService(db, repository.NewRepository(db))
+	authService := service.NewService(db, authrepository.New(db))
 	authHandler := authhandlers.New(authService)
 	hub := realtime.NewHub()
 	go hub.Run()
-	petService := gamepetservice.New(db, gamepetrepository.New(db), gameprogressionrepository.New(db), nil, gameprogressionservice.New(), hub)
-	gameHandler := gamehandlers.New(petService, authService)
+	progressionService := gameprogressionservice.New()
+	petRepo := gamepetrepository.New(db)
+	xpRepo := gameprogressionrepository.New(db)
+	rewardRepo := gamerewardrepository.New(db)
+	petService := gamepetservice.New(db, petRepo, xpRepo, rewardRepo, nil, progressionService, hub)
+	taskService := gametaskservice.New(db, gametaskrepository.New(db), petRepo, xpRepo, rewardRepo, nil, progressionService, hub)
+	rewardService := gamerewardservice.New(db, rewardRepo, hub)
+	summaryService := gamesummaryservice.New(gamesummaryrepository.New(db), nil)
+	leaderboardService := gameleaderservice.New(gameleaderrepository.New(db))
+	gameHandler := gamehandlers.New(petService, taskService, rewardService, summaryService, leaderboardService, authService)
 
 	mux := http.NewServeMux()
 	authHandler.SetRoutes(mux)

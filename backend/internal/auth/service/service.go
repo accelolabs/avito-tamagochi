@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
+	authrepository "github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/security"
 	"github.com/google/uuid"
 )
@@ -19,18 +21,25 @@ const (
 	sessionLifetime   = 7 * 24 * time.Hour
 )
 
-type User = auth.User
-type Session = auth.Session
-type RegisterInput = auth.RegisterInput
-type LoginInput = auth.LoginInput
-type Repository = auth.Repository
-type Service = auth.Service
+type User = model.User
+type Session = model.Session
+type RegisterInput = model.RegisterInput
+type LoginInput = model.LoginInput
+type Repository = authrepository.Repository
+
+type Service interface {
+	Register(context.Context, RegisterInput) (*User, *Session, error)
+	Login(context.Context, LoginInput) (*User, *Session, error)
+	Logout(context.Context, uuid.UUID) error
+	ValidateSession(context.Context, uuid.UUID) (uuid.UUID, error)
+	FindUser(context.Context, uuid.UUID) (*User, error)
+}
 
 var (
-	ErrEmailAlreadyExists = auth.ErrEmailAlreadyExists
-	ErrInvalidCredentials = auth.ErrInvalidCredentials
-	ErrSessionNotFound    = auth.ErrSessionNotFound
-	ErrInvalidInput       = auth.ErrInvalidInput
+	ErrEmailAlreadyExists = autherrors.ErrEmailAlreadyExists
+	ErrInvalidCredentials = autherrors.ErrInvalidCredentials
+	ErrSessionNotFound    = autherrors.ErrSessionNotFound
+	ErrInvalidInput       = autherrors.ErrInvalidInput
 )
 
 type service struct {

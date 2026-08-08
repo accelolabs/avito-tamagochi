@@ -7,23 +7,23 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 	"github.com/google/uuid"
 )
 
 type fakeService struct{ userID uuid.UUID }
 
-func (f fakeService) Register(context.Context, auth.RegisterInput) (*auth.User, *auth.Session, error) {
+func (f fakeService) Register(context.Context, model.RegisterInput) (*model.User, *model.Session, error) {
 	return nil, nil, nil
 }
-func (f fakeService) Login(context.Context, auth.LoginInput) (*auth.User, *auth.Session, error) {
+func (f fakeService) Login(context.Context, model.LoginInput) (*model.User, *model.Session, error) {
 	return nil, nil, nil
 }
 func (f fakeService) Logout(context.Context, uuid.UUID) error { return nil }
 func (f fakeService) ValidateSession(context.Context, uuid.UUID) (uuid.UUID, error) {
 	return f.userID, nil
 }
-func (f fakeService) FindUser(context.Context, uuid.UUID) (*auth.User, error) {
+func (f fakeService) FindUser(context.Context, uuid.UUID) (*model.User, error) {
 	return nil, sql.ErrNoRows
 }
 

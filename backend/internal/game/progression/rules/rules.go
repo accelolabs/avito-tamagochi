@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
+	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
+	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
 )
 
 const ChargeXPAmount = 10
@@ -27,3 +29,28 @@ func EnergyPercent(lastChargedAt, now time.Time) int {
 }
 
 func MoscowDate(now time.Time) time.Time { return clock.MoscowDate(now) }
+
+func TaskXP(taskType taskmodel.Type) int {
+	switch taskType {
+	case taskmodel.View:
+		return 20
+	case taskmodel.Favorite:
+		return 25
+	case taskmodel.CreateListing:
+		return 40
+	case taskmodel.CreateListingCategory:
+		return 50
+	default:
+		return 0
+	}
+}
+
+func RewardTypeForLevel(level int) rewardmodel.Type {
+	if level < 2 {
+		return ""
+	}
+	if level%2 == 0 {
+		return rewardmodel.Promotion
+	}
+	return rewardmodel.Delivery
+}

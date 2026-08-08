@@ -13,6 +13,7 @@ import (
 	progressionmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/model"
 	progressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
 	progression "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/service"
+	rewardrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/repository"
 	"github.com/google/uuid"
 )
 
@@ -22,22 +23,23 @@ type Service interface {
 }
 
 type service struct {
-	db       *sql.DB
-	petRepo  petrepository.Repository
-	xpRepo   progressionrepository.Repository
-	clock    clock.Clock
-	progress progression.Service
-	notify   notifier.Notifier
+	db         *sql.DB
+	petRepo    petrepository.Repository
+	xpRepo     progressionrepository.Repository
+	clock      clock.Clock
+	progress   progression.Service
+	rewardRepo rewardrepository.Repository
+	notify     notifier.Notifier
 }
 
-func New(db *sql.DB, petRepo petrepository.Repository, xpRepo progressionrepository.Repository, now clock.Clock, progress progression.Service, notify notifier.Notifier) Service {
+func New(db *sql.DB, petRepo petrepository.Repository, xpRepo progressionrepository.Repository, rewardRepo rewardrepository.Repository, now clock.Clock, progress progression.Service, notify notifier.Notifier) Service {
 	if now == nil {
 		now = clock.RealClock{}
 	}
 	if progress == nil {
 		progress = progression.New()
 	}
-	return &service{db: db, petRepo: petRepo, xpRepo: xpRepo, clock: now, progress: progress, notify: notify}
+	return &service{db: db, petRepo: petRepo, xpRepo: xpRepo, rewardRepo: rewardRepo, clock: now, progress: progress, notify: notify}
 }
 
 func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats, error) {
@@ -80,6 +82,7 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 		}
 		return s.stats(value, now), nil
 	}
+	oldLevel := s.progress.LevelFromXP(value.XP)
 	value.LastChargedAt = now
 	value.XP += s.progress.ChargeXP()
 	value.UpdatedAt = now
@@ -93,11 +96,21 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 	if err := s.xpRepo.CreateXPEvent(ctx, tx, event); err != nil {
 		return nil, err
 	}
+	for level := oldLevel + 1; level <= s.progress.LevelFromXP(value.XP); level++ {
+		if s.rewardRepo != nil {
+			if err := s.rewardRepo.UnlockForLevel(ctx, tx, userID, level); err != nil {
+				return nil, err
+			}
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	if s.notify != nil {
 		s.notify.NotifyUser(userID, "pet_updated")
+		if s.progress.LevelFromXP(value.XP) > oldLevel {
+			s.notify.NotifyUser(userID, "rewards_updated")
+		}
 	}
 	return s.stats(value, now), nil
 }

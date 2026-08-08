@@ -6,7 +6,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	authservice "github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	"github.com/google/uuid"
 )
 
@@ -17,7 +18,7 @@ func UserID(ctx context.Context) (uuid.UUID, bool) {
 	return id, ok
 }
 
-func RequireSession(service auth.Service, next http.Handler) http.Handler {
+func RequireSession(service authservice.Service, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_id")
 		if err != nil {
@@ -30,7 +31,7 @@ func RequireSession(service auth.Service, next http.Handler) http.Handler {
 			return
 		}
 		userID, err := service.ValidateSession(r.Context(), sessionID)
-		if errors.Is(err, auth.ErrSessionNotFound) {
+		if errors.Is(err, autherrors.ErrSessionNotFound) {
 			unauthorized(w)
 			return
 		}

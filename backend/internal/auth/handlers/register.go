@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 )
 
 type RegisterRequest struct {
@@ -17,7 +17,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &request) {
 		return
 	}
-	user, session, err := h.service.Register(r.Context(), auth.RegisterInput{Email: request.Email, Password: request.Password, DisplayName: request.DisplayName})
+	user, session, err := h.service.Register(r.Context(), model.RegisterInput{Email: request.Email, Password: request.Password, DisplayName: request.DisplayName})
 	if err != nil {
 		mapServiceError(w, err, false)
 		return

@@ -10,20 +10,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 	"github.com/google/uuid"
 )
 
 type fakeService struct {
-	register func(auth.RegisterInput) (*auth.User, *auth.Session, error)
-	login    func(auth.LoginInput) (*auth.User, *auth.Session, error)
+	register func(model.RegisterInput) (*model.User, *model.Session, error)
+	login    func(model.LoginInput) (*model.User, *model.Session, error)
 	logout   func(uuid.UUID) error
 }
 
-func (f fakeService) Register(_ context.Context, input auth.RegisterInput) (*auth.User, *auth.Session, error) {
+func (f fakeService) Register(_ context.Context, input model.RegisterInput) (*model.User, *model.Session, error) {
 	return f.register(input)
 }
-func (f fakeService) Login(_ context.Context, input auth.LoginInput) (*auth.User, *auth.Session, error) {
+func (f fakeService) Login(_ context.Context, input model.LoginInput) (*model.User, *model.Session, error) {
 	if f.login == nil {
 		return nil, nil, errors.New("not implemented")
 	}
@@ -38,18 +39,18 @@ func (f fakeService) Logout(_ context.Context, sessionID uuid.UUID) error {
 func (fakeService) ValidateSession(context.Context, uuid.UUID) (uuid.UUID, error) {
 	return uuid.Nil, sql.ErrNoRows
 }
-func (fakeService) FindUser(context.Context, uuid.UUID) (*auth.User, error) {
+func (fakeService) FindUser(context.Context, uuid.UUID) (*model.User, error) {
 	return nil, sql.ErrNoRows
 }
 
 func TestRegisterSetsSessionCookieAndReturnsUser(t *testing.T) {
 	userID := uuid.New()
 	sessionID := uuid.New()
-	service := fakeService{register: func(input auth.RegisterInput) (*auth.User, *auth.Session, error) {
+	service := fakeService{register: func(input model.RegisterInput) (*model.User, *model.Session, error) {
 		if input.Email != " User@Example.com " || input.Password != "password" || input.DisplayName != "Player" {
 			t.Fatalf("unexpected register input: %+v", input)
 		}
-		return &auth.User{ID: userID, Email: "user@example.com", DisplayName: "Player", CreatedAt: time.Unix(10, 0).UTC()}, &auth.Session{ID: sessionID, ExpiresAt: time.Now().Add(time.Hour)}, nil
+		return &model.User{ID: userID, Email: "user@example.com", DisplayName: "Player", CreatedAt: time.Unix(10, 0).UTC()}, &model.Session{ID: sessionID, ExpiresAt: time.Now().Add(time.Hour)}, nil
 	}}
 	handler := New(service)
 	mux := http.NewServeMux()
@@ -72,8 +73,8 @@ func TestRegisterSetsSessionCookieAndReturnsUser(t *testing.T) {
 }
 
 func TestRegisterMapsDuplicateEmail(t *testing.T) {
-	handler := New(fakeService{register: func(auth.RegisterInput) (*auth.User, *auth.Session, error) {
-		return nil, nil, auth.ErrEmailAlreadyExists
+	handler := New(fakeService{register: func(model.RegisterInput) (*model.User, *model.Session, error) {
+		return nil, nil, autherrors.ErrEmailAlreadyExists
 	}})
 	mux := http.NewServeMux()
 	handler.SetRoutes(mux)
@@ -92,11 +93,11 @@ func TestRegisterMapsDuplicateEmail(t *testing.T) {
 func TestLoginSetsSessionCookieAndReturnsUser(t *testing.T) {
 	userID := uuid.New()
 	sessionID := uuid.New()
-	service := fakeService{login: func(input auth.LoginInput) (*auth.User, *auth.Session, error) {
+	service := fakeService{login: func(input model.LoginInput) (*model.User, *model.Session, error) {
 		if input.Email != "user@example.com" || input.Password != "password" {
 			t.Fatalf("unexpected login input: %+v", input)
 		}
-		return &auth.User{ID: userID, Email: input.Email, DisplayName: "Player"}, &auth.Session{ID: sessionID, ExpiresAt: time.Now().Add(time.Hour)}, nil
+		return &model.User{ID: userID, Email: input.Email, DisplayName: "Player"}, &model.Session{ID: sessionID, ExpiresAt: time.Now().Add(time.Hour)}, nil
 	}}
 	handler := New(service)
 	mux := http.NewServeMux()

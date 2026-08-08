@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
@@ -32,9 +34,9 @@ func testDatabase(t *testing.T) *sql.DB {
 	return db
 }
 
-func testUser() User {
+func testUser() model.User {
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	return User{
+	return model.User{
 		ID:           uuid.New(),
 		Email:        fmt.Sprintf("auth-test-%s@example.com", uuid.NewString()),
 		DisplayName:  "Test_Player",
@@ -43,7 +45,7 @@ func testUser() User {
 	}
 }
 
-func insertTestUser(t *testing.T, db *sql.DB, user User) {
+func insertTestUser(t *testing.T, db *sql.DB, user model.User) {
 	t.Helper()
 	_, err := db.ExecContext(context.Background(), `INSERT INTO users (id, email, display_name, password_hash, created_at) VALUES ($1, $2, $3, $4, $5)`, user.ID, user.Email, user.DisplayName, user.PasswordHash, user.CreatedAt)
 	if err != nil {
@@ -54,7 +56,7 @@ func insertTestUser(t *testing.T, db *sql.DB, user User) {
 
 func TestRepositoryFindUserByEmailAndID(t *testing.T) {
 	db := testDatabase(t)
-	repository := NewRepository(db)
+	repository := New(db)
 	user := testUser()
 	insertTestUser(t, db, user)
 
@@ -77,10 +79,10 @@ func TestRepositoryFindUserByEmailAndID(t *testing.T) {
 
 func TestRepositoryFindSession(t *testing.T) {
 	db := testDatabase(t)
-	repository := NewRepository(db)
+	repository := New(db)
 	user := testUser()
 	insertTestUser(t, db, user)
-	session := Session{ID: uuid.New(), UserID: user.ID, CreatedAt: time.Now().UTC().Truncate(time.Microsecond), ExpiresAt: time.Now().UTC().Add(time.Hour).Truncate(time.Microsecond)}
+	session := model.Session{ID: uuid.New(), UserID: user.ID, CreatedAt: time.Now().UTC().Truncate(time.Microsecond), ExpiresAt: time.Now().UTC().Add(time.Hour).Truncate(time.Microsecond)}
 	_, err := db.ExecContext(context.Background(), `INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES ($1, $2, $3, $4)`, session.ID, session.UserID, session.ExpiresAt, session.CreatedAt)
 	if err != nil {
 		t.Fatalf("insert test session: %v", err)
@@ -98,7 +100,7 @@ func TestRepositoryFindSession(t *testing.T) {
 
 func TestCreateUserMapsUniqueViolation(t *testing.T) {
 	db := testDatabase(t)
-	repository := NewRepository(db)
+	repository := New(db)
 	existing := testUser()
 	insertTestUser(t, db, existing)
 	duplicate := testUser()
@@ -110,8 +112,8 @@ func TestCreateUserMapsUniqueViolation(t *testing.T) {
 	}
 	err = repository.CreateUser(context.Background(), tx, duplicate)
 	_ = tx.Rollback()
-	if !errors.Is(err, ErrEmailAlreadyExists) {
-		t.Fatalf("CreateUser() error = %v, want %v", err, ErrEmailAlreadyExists)
+	if !errors.Is(err, autherrors.ErrEmailAlreadyExists) {
+		t.Fatalf("CreateUser() error = %v, want %v", err, autherrors.ErrEmailAlreadyExists)
 	}
 }
 
@@ -124,8 +126,8 @@ func TestIsUniqueViolationAcceptsWrappedPostgresError(t *testing.T) {
 
 func TestRepositoryCreateSessionReturnsDatabaseError(t *testing.T) {
 	db := testDatabase(t)
-	repository := NewRepository(db)
-	session := Session{ID: uuid.New(), UserID: uuid.New(), CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(time.Hour)}
+	repository := New(db)
+	session := model.Session{ID: uuid.New(), UserID: uuid.New(), CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(time.Hour)}
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -140,7 +142,7 @@ func TestRepositoryCreateSessionReturnsDatabaseError(t *testing.T) {
 
 func TestRepositoryDeleteSessionIsIdempotent(t *testing.T) {
 	db := testDatabase(t)
-	repository := NewRepository(db)
+	repository := New(db)
 	if err := repository.DeleteSession(context.Background(), uuid.New()); err != nil {
 		t.Fatalf("DeleteSession() error = %v for missing session", err)
 	}

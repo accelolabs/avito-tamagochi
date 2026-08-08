@@ -5,5 +5,7 @@ import "errors"
 var (
 	ErrInvalidAction     = errors.New("invalid game action")
 	ErrChargeAlreadyUsed = errors.New("charge already used today")
-	ErrNotImplemented    = errors.New("domain service is not implemented")
+	ErrTaskNotAvailable  = errors.New("task is not available today")
+	ErrRewardNotFound    = errors.New("reward not found")
+	ErrRewardAlreadyUsed = errors.New("reward already used")
 )

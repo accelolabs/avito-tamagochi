@@ -8,5 +8,7 @@ type DailySummary struct {
 	CompletedTasks  int
 	Charges         int
 	Level           int
+	CurrentXP       int
+	Energy          int
 	UnlockedRewards []string
 }

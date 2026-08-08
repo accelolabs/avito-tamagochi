@@ -5,19 +5,27 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
+	authservice "github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	gameerrors "github.com/accelolabs/avito-tamagochi/backend/internal/game/errors"
-	game "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
+	leadservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/leaderboard/service"
+	petservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
+	rewardsservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/service"
+	summaryservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/service"
+	tasksservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/service"
 )
 
 type Handler struct {
-	petService  game.Service
-	authService auth.Service
+	petService         petservice.Service
+	tasksService       tasksservice.Service
+	rewardsService     rewardsservice.Service
+	summaryService     summaryservice.Service
+	leaderboardService leadservice.Service
+	authService        authservice.Service
 }
 
-func New(petService game.Service, authService auth.Service) *Handler {
-	return &Handler{petService: petService, authService: authService}
+func New(petService petservice.Service, tasksService tasksservice.Service, rewardsService rewardsservice.Service, summaryService summaryservice.Service, leaderboardService leadservice.Service, authService authservice.Service) *Handler {
+	return &Handler{petService: petService, tasksService: tasksService, rewardsService: rewardsService, summaryService: summaryService, leaderboardService: leaderboardService, authService: authService}
 }
 
 func (h *Handler) SetRoutes(mux *http.ServeMux) {
@@ -54,11 +62,13 @@ func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gameerrors.ErrInvalidAction):
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+	case errors.Is(err, gameerrors.ErrTaskNotAvailable):
+		writeError(w, http.StatusBadRequest, "task_not_available", "task is not available today")
+	case errors.Is(err, gameerrors.ErrRewardNotFound):
+		writeError(w, http.StatusNotFound, "reward_not_found", "reward was not found")
+	case errors.Is(err, gameerrors.ErrRewardAlreadyUsed):
+		writeError(w, http.StatusConflict, "reward_already_used", "reward was already used")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "internal server error")
 	}
-}
-
-func notImplemented(w http.ResponseWriter) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "endpoint is not implemented yet")
 }

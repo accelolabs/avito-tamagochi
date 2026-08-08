@@ -20,7 +20,10 @@ type Progress struct {
 	UserID        uuid.UUID
 	LocalDate     time.Time
 	TaskType      Type
+	Title         string
+	XPReward      int
 	Progress      int
 	RequiredCount int
 	Completed     bool
+	CompletedAt   *time.Time
 }

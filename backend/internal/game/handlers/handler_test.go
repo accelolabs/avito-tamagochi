@@ -44,13 +44,13 @@ func TestChargeRejectsUnknownAction(t *testing.T) {
 	}
 }
 
-func TestUnimplementedTaskEndpointReturnsNotImplemented(t *testing.T) {
+func TestTaskEndpointRequiresAuthentication(t *testing.T) {
 	handler := &Handler{}
 	response := httptest.NewRecorder()
 
 	handler.getTodayTasks(response, httptest.NewRequest(http.MethodGet, "/api/v1/tasks/today", nil))
 
-	if response.Code != http.StatusNotImplemented {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusNotImplemented)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
 	}
 }
