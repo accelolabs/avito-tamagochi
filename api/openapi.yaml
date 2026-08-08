@@ -3,7 +3,7 @@ openapi: 3.0.3
 info:
   title: Avito Tamagotchi API
   version: 1.0.0
-  description: Authentication and WebSocket contract for the Avito Tamagotchi MVP.
+  description: Authentication, game, and WebSocket contract for the Avito Tamagotchi MVP.
 
 servers:
   - url: /api/v1
@@ -118,6 +118,69 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
+  /pet:
+    get:
+      operationId: getPet
+      summary: Get or create the current user's pet
+      responses:
+        "200": { description: Pet stats, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+  /pet/actions:
+    post:
+      operationId: chargePet
+      summary: Charge the pet
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: string, enum: [charge] } }
+      responses:
+        "200": { description: Updated pet, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+  /tasks/today:
+    get:
+      operationId: getTodayTasks
+      summary: Get today's rotated tasks
+      responses:
+        "200": { description: Tasks, content: { application/json: { schema: { $ref: "#/components/schemas/Tasks" } } } }
+  /mock-avito/actions:
+    post:
+      operationId: applyMockAvitoAction
+      summary: Apply a mock Avito action
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: string, enum: [view, favorite, create_listing, create_listing_in_category] } }
+      responses:
+        "200": { description: Action accepted }
+        "400": { $ref: "#/components/responses/ValidationError" }
+  /rewards:
+    get:
+      operationId: getRewards
+      summary: Get unlocked rewards
+      responses:
+        "200": { description: Rewards, content: { application/json: { schema: { $ref: "#/components/schemas/Rewards" } } } }
+  /rewards/{rewardID}/use:
+    post:
+      operationId: useReward
+      summary: Use an unlocked reward
+      parameters: [{ name: rewardID, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: Used reward }
+        "404": { description: Reward not found }
+        "409": { description: Reward already used }
+  /summary/today:
+    get:
+      operationId: getTodaySummary
+      summary: Get today's Moscow-time summary
+      responses:
+        "200": { description: Daily summary, content: { application/json: { schema: { $ref: "#/components/schemas/Summary" } } } }
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      summary: Get the top ten and current user's rank
+      responses:
+        "200": { description: Leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/Leaderboard" } } } }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -213,6 +276,46 @@ components:
         event:
           type: string
           description: Event name published by the backend.
+
+    Pet:
+      type: object
+      required: [xp, level, energy, lastChargedAt]
+      properties:
+        xp: { type: integer }
+        level: { type: integer }
+        energy: { type: integer, minimum: 0, maximum: 100 }
+        lastChargedAt: { type: string, format: date-time }
+    Tasks:
+      type: object
+      properties:
+        tasks: { type: array, items: { $ref: "#/components/schemas/Task" } }
+    Task:
+      type: object
+      properties:
+        type: { type: string }
+        progress: { type: integer }
+        requiredCount: { type: integer }
+        status: { type: string, enum: [in_progress, completed] }
+        xpReward: { type: integer }
+    Rewards:
+      type: object
+      properties:
+        rewards: { type: array, items: { type: object } }
+    Summary:
+      type: object
+      properties:
+        xpEarned: { type: integer }
+        completedTasks: { type: integer }
+        charges: { type: integer }
+        level: { type: integer }
+        currentXP: { type: integer }
+        energy: { type: integer }
+        unlockedRewards: { type: array, items: { type: string } }
+    Leaderboard:
+      type: object
+      properties:
+        entries: { type: array, items: { type: object } }
+        currentUser: { type: object, nullable: true }
 
     ErrorResponse:
       type: object
