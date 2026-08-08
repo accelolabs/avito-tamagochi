@@ -9,7 +9,7 @@ MVP виртуального питомца, который развиваетс
 3. Опыт повышает уровень и открывает персональные награды.
 4. WebSocket, лидерборд и ежедневная сводка показывают прогресс и мотивируют вернуться.
 
-Точные правила игры описаны в [Game Design](docs/game-design.md).
+Точные правила игры описаны в [игровом дизайне](docs/game-design.md).
 
 ## Стек
 
@@ -44,6 +44,6 @@ cd frontend && npm run lint && npm run build
 ## Документация
 
 - [Исходный кейс](docs/Кейс%201.pdf)
-- [Game Design](docs/game-design.md)
-- [Game API](docs/game-api.md)
-- [Testing](docs/testing.md)
+- [Игровой дизайн](docs/game-design.md)
+- [Игровой API](docs/game-api.md)
+- [Тестирование](docs/testing.md)
