@@ -12,6 +12,11 @@ import (
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
+	gamehandlers "github.com/accelolabs/avito-tamagochi/backend/internal/game/handlers"
+	gamepetrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/repository"
+	gamepetservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
+	gameprogressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
+	gameprogressionservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/service"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/realtime"
 	_ "github.com/lib/pq"
 )
@@ -40,9 +45,12 @@ func main() {
 	authHandler := authhandlers.New(authService)
 	hub := realtime.NewHub()
 	go hub.Run()
+	petService := gamepetservice.New(db, gamepetrepository.New(db), gameprogressionrepository.New(db), nil, gameprogressionservice.New(), hub)
+	gameHandler := gamehandlers.New(petService, authService)
 
 	mux := http.NewServeMux()
 	authHandler.SetRoutes(mux)
+	gameHandler.SetRoutes(mux)
 	mux.Handle("GET /api/v1/auth/me", middleware.RequireSession(authService, http.HandlerFunc(authHandler.Me)))
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
