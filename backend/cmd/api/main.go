@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -43,19 +42,10 @@ func main() {
 	go hub.Run()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/health", health)
 	authHandler.SetRoutes(mux)
 	mux.Handle("GET /api/v1/auth/me", middleware.RequireSession(authService, http.HandlerFunc(authHandler.Me)))
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
 	log.Printf("server started on http://localhost:%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, mux))
-}
-
-func health(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"status": "ok",
-	})
 }
