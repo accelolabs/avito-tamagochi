@@ -1,33 +1,32 @@
+import './Tasks.css';
+
 const Tasks = () => {
     return (
-        <div className="tasks">
-            <div className="tasks__content">
-                <h1 className="tasks__header">Ежедневные задания</h1>
-                <p className="tasks__description">Выполняй задания, чтобы развивать питомца</p>
-            </div>
-
-            <div className="tasks__stats">
-                <h1 className="tasks__stats-title">Задания на сегодня</h1>
-
-                <div className="tasks__stats-info">
-                    <div className="tasks__progress">
-                        <div className="tasks__progress-bar">
-                            <div
-                                className="tasks__progress-fill tasks__progress-fill--xp"
-                                style={{ width: '0%' }}
-                            />
-                        </div>
-                        <div className="tasks__progress-info">
-                            <span className="tasks__progress-label">Выполнено: 0 из 3</span>
-                        </div>
-                    </div>
+        <div className="tasks-container">
+            <div className="tasks">
+                <div className="tasks__content">
+                    <h1 className="tasks__header">Ежедневные задания</h1>
+                    <p className="tasks__description">Выполняй задания, чтобы развивать питомца</p>
                 </div>
-            </div>
-
-            <div className="tasks__list">
-                <TaskItem/>
-                <TaskItem/>
-                <TaskItem/>
+                <div className="tasks__stats">
+                    <h1 className="tasks__stats-title">Задания на сегодня</h1>
+                        <div className="tasks__progress">
+                            <div className="tasks__progress-bar">
+                                <div
+                                    className="tasks__progress-fill tasks__progress-fill--xp"
+                                    style={{ width: '0%' }}
+                                />
+                            </div>
+                            <div className="tasks__progress-info">
+                                <span className="tasks__progress-label">Выполнено: 0 из 3</span>
+                            </div>
+                        </div>
+                </div>
+                <div className="tasks__list">
+                    <TaskItem/>
+                    <TaskItem/>
+                    <TaskItem/>
+                </div>
             </div>
         </div>
     );
