@@ -16,40 +16,51 @@ const players = [
 const Leaderboard = () => {
   return (
     <div className="leaderboard__page">
-        <div className="leaderboard__info">
-            <h1 className="leaderboard__title">Лидерборд</h1>
-            <p className="leaderboard__description">Топ игроков по опыту</p>
+        <div className="leaderboard__container">
+            <div className="leaderboard__info">
+                <h1 className="leaderboard__title">Лидерборд</h1>
+                <p className="leaderboard__description">Топ игроков по опыту</p>
+            </div>
+            <div className="leaderboard-wrapper">
+                <table className="leaderboard">
+                    <colgroup>
+                        <col className="leaderboard__col leaderboard__col--place" />
+                        <col className="leaderboard__col leaderboard__col--player" />
+                        <col className="leaderboard__col leaderboard__col--xp" />
+                    </colgroup>
+                    <thead className="leaderboard__head">
+                        <tr className="leaderboard__row leaderboard__row--header">
+                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--place">Место</th>
+                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--player">Игрок</th>
+                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--xp">Опыт(XP)</th>
+                        </tr>
+                    </thead>
+
+                    <tbody className="leaderboard__body">
+                        {players.map((player) => (
+                        <tr key={player.place} className={player.place === 5 ? "leaderboard__row--your-result" : "leaderboard__row"}>
+                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--place">{player.place}</td>
+                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--player">{player.name}</td>
+                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--xp">{player.xp}</td>
+                        </tr>
+                        ))}
+                    </tbody>
+
+                    <tfoot className="leaderboard__foot">
+                        <tr className="leaderboard__row leaderboard__row--footer">
+                        <td colSpan={3} className="leaderboard__cell leaderboard__cell--footer">
+                            <div className="leaderboard__footer-content">
+                                <span className="leaderboard__info">Ваше место: 5 из 42</span>
+                                <button className="leaderboard__button leaderboard__button--share">
+                                    Поделиться
+                                </button>
+                            </div>
+                        </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
-        <table className="leaderboard">
-            <thead className="leaderboard__head">
-                <tr className="leaderboard__row leaderboard__row--header">
-                <th className="leaderboard__cell leaderboard__cell--header">Место</th>
-                <th className="leaderboard__cell leaderboard__cell--header">Игрок</th>
-                <th className="leaderboard__cell leaderboard__cell--header">Опыт(XP)</th>
-                </tr>
-            </thead>
-
-            <tbody className="leaderboard__body">
-                {players.map((player) => (
-                <tr key={player.place} className="leaderboard__row">
-                    <td className="leaderboard__cell leaderboard__cell--body">{player.place}</td>
-                    <td className="leaderboard__cell leaderboard__cell--body">{player.name}</td>
-                    <td className="leaderboard__cell leaderboard__cell--body">{player.xp}</td>
-                </tr>
-                ))}
-            </tbody>
-
-            <tfoot className="leaderboard__foot">
-                <tr className="leaderboard__row leaderboard__row--footer">
-                <td colSpan={3} className="leaderboard__cell leaderboard__cell--footer">
-                    <span className="leaderboard__info">Выше место: 5 из 42</span>
-                    <button className="leaderboard__button leaderboard__button--share">
-                    Поделиться
-                    </button>
-                </td>
-                </tr>
-            </tfoot>
-        </table>
     </div>
   );
 };
