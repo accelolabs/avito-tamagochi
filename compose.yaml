@@ -24,11 +24,6 @@ services:
         condition: service_completed_successfully
     expose:
       - "8080"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   migrate:
     build:
@@ -46,7 +41,7 @@ services:
       context: ./frontend
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     healthcheck:
