@@ -1,0 +1,269 @@
+openapi: 3.0.3
+
+info:
+  title: Avito Tamagotchi API
+  version: 1.0.0
+  description: Authentication and WebSocket contract for the Avito Tamagotchi MVP.
+
+servers:
+  - url: /api/v1
+    description: HTTP API through Nginx
+
+security:
+  - sessionCookie: []
+
+paths:
+  /auth/register:
+    post:
+      operationId: registerUser
+      summary: Register a user and create an authenticated session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered and authenticated
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/EmailAlreadyExistsError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      summary: Log in and create an authenticated session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: User authenticated
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/InvalidCredentialsError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      summary: Delete the current session and clear the session cookie
+      security: []
+      responses:
+        "204":
+          description: Session deleted when a valid session cookie is present; cookie is cleared in all cases
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/ExpiredSessionCookie"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the authenticated user
+      responses:
+        "200":
+          description: Current authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ws:
+    get:
+      operationId: connectWebSocket
+      summary: Connect to authenticated real-time events
+      description: >-
+        Upgrades the authenticated HTTP request to a WebSocket connection.
+        The server sends JSON event envelopes with an event name and does not
+        send an initial snapshot.
+      servers:
+        - url: /
+          description: WebSocket endpoint through Nginx
+      x-websocket-messages:
+        $ref: "#/components/schemas/WSEvent"
+      responses:
+        "101":
+          description: WebSocket connection established
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: HttpOnly session cookie with a seven-day lifetime.
+
+  headers:
+    SessionCookie:
+      description: >-
+        Session cookie set on successful registration or login. Uses Path=/,
+        HttpOnly, SameSite=Lax, a seven-day expiration, and Secure when
+        APP_SECURE_COOKIES=true.
+      schema:
+        type: string
+
+    ExpiredSessionCookie:
+      description: Session cookie cleared with Max-Age=-1 and an expiration date in the past.
+      schema:
+        type: string
+
+  schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+        - displayName
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Trimmed and normalized to lowercase by the backend.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 32
+          pattern: "^[A-Za-z_-]+$"
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Trimmed and normalized to lowercase by the backend.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - displayName
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WSEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          description: Event name published by the backend.
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - validation_error
+            - unauthorized
+            - invalid_credentials
+            - email_already_exists
+            - internal_error
+        message:
+          type: string
+
+  responses:
+    ValidationError:
+      description: Request body is invalid or fails backend validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    UnauthorizedError:
+      description: Authentication is required or the session has expired.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InvalidCredentialsError:
+      description: Email or password is incorrect.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    EmailAlreadyExistsError:
+      description: The normalized email is already registered.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
