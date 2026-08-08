@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/realtime"
 	"log"
 	"net/http"
 	"os"
@@ -42,8 +43,17 @@ func main() {
 	authRepo := auth.NewPgRepository(db)
 	authService := auth.NewService(db, authRepo)
 
+	wsHub := realtime.NewHub()
+	go wsHub.Run()
+
 	// 4. Настраиваем роутер
 	router := gin.Default()
+
+	wsGroup := router.Group("/")
+	wsGroup.Use(middleware.RequireAuth(authService))
+	{
+		wsGroup.GET("/ws", realtime.ServeWS(wsHub))
+	}
 
 	v1 := router.Group("/api/v1")
 	{
