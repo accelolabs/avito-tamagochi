@@ -9,7 +9,7 @@ MVP виртуального питомца, который развиваетс
 3. Опыт повышает уровень и открывает персональные награды.
 4. WebSocket, лидерборд и ежедневная сводка показывают прогресс и мотивируют вернуться.
 
-> Точные параметры, действия, формула прогрессии и награды будут зафиксированы до реализации бизнес-логики.
+Точные правила игры описаны в [Game Design](docs/game-design.md).
 
 ## Стек
 
@@ -28,7 +28,6 @@ docker compose up --build
 ```
 
 - Приложение: <http://localhost:3000>
-- Healthcheck: <http://localhost:3000/api/health>
 
 ```bash
 docker compose ps
@@ -45,3 +44,6 @@ cd frontend && npm run lint && npm run build
 ## Документация
 
 - [Исходный кейс](docs/Кейс%201.pdf)
+- [Game Design](docs/game-design.md)
+- [Game API](docs/game-api.md)
+- [Testing](docs/testing.md)
