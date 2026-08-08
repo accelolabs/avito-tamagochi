@@ -49,7 +49,7 @@ func TestGameCatalogMigrationHasRotationsAndRewards(t *testing.T) {
 	contents, err := os.ReadFile(path)
 	if err != nil { t.Fatalf("read game catalog migration: %v", err) }
 	sql := string(contents)
-	for _, marker := range []string{"CREATE TABLE task_definitions", "CREATE TABLE task_rotation", "CREATE TABLE task_progress", "CREATE TABLE reward_definitions", "CREATE TABLE user_rewards", "UNIQUE (user_id, reward_id)"} {
+	for _, marker := range []string{"CREATE TABLE task_definitions", "CREATE TABLE task_rotation", "CREATE TABLE task_progress", "CREATE TABLE user_rewards", "UNIQUE (user_id, level)", "CHECK (type IN ('promotion', 'free_delivery'))"} {
 		if !strings.Contains(sql, marker) { t.Fatalf("game catalog migration does not contain %q", marker) }
 	}
 }

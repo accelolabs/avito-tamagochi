@@ -15,6 +15,7 @@ type PostgreSQLRepository struct{ db *sql.DB }
 func New(db *sql.DB) *PostgreSQLRepository { return &PostgreSQLRepository{db: db} }
 
 func (r *PostgreSQLRepository) GetTodayProgress(ctx context.Context, userID uuid.UUID, localDate time.Time) ([]taskmodel.Progress, error) {
+	date := localDate.Format("2006-01-02")
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT $2, $1, r.task_type, d.title, d.xp_reward,
 		       COALESCE(p.progress, 0), d.required_count, p.completed_at
@@ -22,7 +23,7 @@ func (r *PostgreSQLRepository) GetTodayProgress(ctx context.Context, userID uuid
 		JOIN task_definitions d ON d.type = r.task_type
 		LEFT JOIN task_progress p ON p.task_type = r.task_type AND p.user_id = $2 AND p.local_date = $1
 		WHERE r.cycle_day = ((($1::date - DATE '1970-01-01') % 3) + 1)
-		ORDER BY r.task_type`, localDate, userID)
+	ORDER BY r.task_type`, date, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,18 +44,19 @@ func (r *PostgreSQLRepository) GetTodayProgress(ctx context.Context, userID uuid
 }
 
 func (r *PostgreSQLRepository) GetProgressForUpdate(ctx context.Context, tx *sql.Tx, userID uuid.UUID, localDate time.Time, taskType taskmodel.Type) (*taskmodel.Progress, error) {
+	date := localDate.Format("2006-01-02")
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO task_progress (user_id, local_date, task_type)
 		SELECT $1, $2, r.task_type
 		FROM task_rotation r
 		WHERE r.cycle_day = ((($2::date - DATE '1970-01-01') % 3) + 1) AND r.task_type = $3
 		ON CONFLICT (user_id, local_date, task_type) DO NOTHING
-	`, userID, localDate, taskType)
+	`, userID, date, taskType)
 	if err != nil {
 		return nil, err
 	}
 
-	return scanProgress(tx.QueryRowContext(ctx, taskQuery+` WHERE p.user_id = $1 AND p.local_date = $2 AND p.task_type = $3 FOR UPDATE`, userID, localDate, taskType))
+	return scanProgress(tx.QueryRowContext(ctx, taskQuery+` WHERE p.user_id = $1 AND p.local_date = $2::date AND p.task_type = $3 FOR UPDATE`, userID, date, taskType))
 }
 
 func (r *PostgreSQLRepository) SaveProgress(ctx context.Context, tx *sql.Tx, value taskmodel.Progress) error {

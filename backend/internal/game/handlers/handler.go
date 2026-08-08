@@ -13,6 +13,7 @@ import (
 	rewardsservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/service"
 	summaryservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/service"
 	tasksservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/service"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -22,6 +23,10 @@ type Handler struct {
 	summaryService     summaryservice.Service
 	leaderboardService leadservice.Service
 	authService        authservice.Service
+}
+
+func currentUserID(r *http.Request) (uuid.UUID, bool) {
+	return middleware.UserID(r.Context())
 }
 
 func New(petService petservice.Service, tasksService tasksservice.Service, rewardsService rewardsservice.Service, summaryService summaryservice.Service, leaderboardService leadservice.Service, authService authservice.Service) *Handler {

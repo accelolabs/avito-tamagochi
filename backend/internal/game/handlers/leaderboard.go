@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	leadermodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/leaderboard/model"
 	"github.com/google/uuid"
 )
@@ -22,12 +21,12 @@ type leaderboardResponse struct {
 }
 
 func (h *Handler) getLeaderboard(w http.ResponseWriter, r *http.Request) {
-	id, ok := middleware.UserID(r.Context())
+	id, ok := currentUserID(r)
 	if !ok {
 		writeError(w, 401, "unauthorized", "authentication is required")
 		return
 	}
-	items, err := h.leaderboardService.GetTop(r.Context(), 10)
+	items, err := h.leaderboardService.GetTop(r.Context())
 	if err != nil {
 		mapGameError(w, err)
 		return

@@ -16,7 +16,7 @@ func (r *PostgreSQLRepository) CreateXPEvent(ctx context.Context, tx *sql.Tx, ev
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO xp_events (id, user_id, pet_id, source, source_key, amount, occurred_at, local_date)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, event.ID, event.UserID, event.PetID, event.Source, event.SourceKey, event.Amount, event.OccurredAt, event.LocalDate)
+	`, event.ID, event.UserID, event.PetID, event.Source, event.SourceKey, event.Amount, event.OccurredAt, event.LocalDate.Format("2006-01-02"))
 	return err
 }
 

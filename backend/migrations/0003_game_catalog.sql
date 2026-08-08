@@ -22,21 +22,16 @@ CREATE TABLE task_progress (
     PRIMARY KEY (user_id, local_date, task_type)
 );
 
-CREATE TABLE reward_definitions (
-    id UUID PRIMARY KEY,
-    level INTEGER NOT NULL UNIQUE CHECK (level >= 2),
-    type VARCHAR(64) NOT NULL,
-    title VARCHAR(255) NOT NULL
-);
-
 CREATE TABLE user_rewards (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    reward_id UUID NOT NULL REFERENCES reward_definitions(id),
+    level INTEGER NOT NULL CHECK (level >= 2),
+    type VARCHAR(64) NOT NULL CHECK (type IN ('promotion', 'free_delivery')),
     status VARCHAR(32) NOT NULL CHECK (status IN ('available', 'used')),
     unlocked_at TIMESTAMPTZ NOT NULL,
     used_at TIMESTAMPTZ,
-    UNIQUE (user_id, reward_id)
+    UNIQUE (user_id, level),
+    CHECK ((status = 'used' AND used_at IS NOT NULL) OR (status = 'available' AND used_at IS NULL))
 );
 
 INSERT INTO task_definitions (type, title, required_count, xp_reward) VALUES
@@ -50,16 +45,9 @@ INSERT INTO task_rotation (cycle_day, task_type) VALUES
     (2, 'view'), (2, 'create_listing'), (2, 'create_listing_in_category'),
     (3, 'favorite'), (3, 'create_listing'), (3, 'create_listing_in_category');
 
-INSERT INTO reward_definitions (id, level, type, title) VALUES
-    ('00000000-0000-0000-0000-000000000002', 2, 'promotion', 'Продвижение объявления'),
-    ('00000000-0000-0000-0000-000000000003', 3, 'free_delivery', 'Бесплатная доставка'),
-    ('00000000-0000-0000-0000-000000000004', 4, 'promotion', 'Продвижение объявления'),
-    ('00000000-0000-0000-0000-000000000005', 5, 'free_delivery', 'Бесплатная доставка');
-
 -- +goose Down
 
 DROP TABLE user_rewards;
-DROP TABLE reward_definitions;
 DROP TABLE task_progress;
 DROP TABLE task_rotation;
 DROP TABLE task_definitions;

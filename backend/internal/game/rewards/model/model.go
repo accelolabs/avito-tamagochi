@@ -16,6 +16,7 @@ const (
 type UserReward struct {
 	ID         uuid.UUID
 	UserID     uuid.UUID
+	Level      int
 	RewardType Type
 	Status     string
 	UnlockedAt time.Time

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 )
 
@@ -17,7 +16,7 @@ type petResponse struct {
 }
 
 func (h *Handler) getPet(w http.ResponseWriter, r *http.Request) {
-	id, ok := middleware.UserID(r.Context())
+	id, ok := currentUserID(r)
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
@@ -39,7 +38,7 @@ func (h *Handler) chargePet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, ok := middleware.UserID(r.Context())
+	id, ok := currentUserID(r)
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return

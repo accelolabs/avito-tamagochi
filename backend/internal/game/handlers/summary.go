@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	"net/http"
 )
 
@@ -16,7 +15,7 @@ type summaryResponse struct {
 }
 
 func (h *Handler) getTodaySummary(w http.ResponseWriter, r *http.Request) {
-	id, ok := middleware.UserID(r.Context())
+	id, ok := currentUserID(r)
 	if !ok {
 		writeError(w, 401, "unauthorized", "authentication is required")
 		return

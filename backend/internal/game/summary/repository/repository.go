@@ -9,5 +9,5 @@ import (
 )
 
 type Repository interface {
-	GetToday(context.Context, uuid.UUID, time.Time) (*summarymodel.DailySummary, error)
+	GetToday(context.Context, uuid.UUID, time.Time, time.Time) (*summarymodel.DailySummary, error)
 }

@@ -300,7 +300,18 @@ components:
     Rewards:
       type: object
       properties:
-        rewards: { type: array, items: { type: object } }
+        rewards:
+          type: array
+          items:
+            type: object
+            required: [id, level, type, status, unlockedAt]
+            properties:
+              id: { type: string, format: uuid }
+              level: { type: integer, minimum: 2 }
+              type: { type: string, enum: [promotion, free_delivery] }
+              status: { type: string, enum: [available, used] }
+              unlockedAt: { type: string, format: date-time }
+              usedAt: { type: string, format: date-time, nullable: true }
     Summary:
       type: object
       properties:

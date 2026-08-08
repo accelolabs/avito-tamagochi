@@ -8,6 +8,6 @@ import (
 )
 
 type Repository interface {
-	GetTop(context.Context, int) ([]leadermodel.Entry, error)
+	GetTop(context.Context) ([]leadermodel.Entry, error)
 	GetUserRank(context.Context, uuid.UUID) (*leadermodel.Entry, error)
 }

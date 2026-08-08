@@ -12,7 +12,7 @@ import (
 	petrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/repository"
 	progressionmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/model"
 	progressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
-	progression "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/service"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/rules"
 	rewardrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/repository"
 	"github.com/google/uuid"
 )
@@ -27,19 +27,15 @@ type service struct {
 	petRepo    petrepository.Repository
 	xpRepo     progressionrepository.Repository
 	clock      clock.Clock
-	progress   progression.Service
 	rewardRepo rewardrepository.Repository
 	notify     notifier.Notifier
 }
 
-func New(db *sql.DB, petRepo petrepository.Repository, xpRepo progressionrepository.Repository, rewardRepo rewardrepository.Repository, now clock.Clock, progress progression.Service, notify notifier.Notifier) Service {
+func New(db *sql.DB, petRepo petrepository.Repository, xpRepo progressionrepository.Repository, rewardRepo rewardrepository.Repository, now clock.Clock, notify notifier.Notifier) Service {
 	if now == nil {
 		now = clock.RealClock{}
 	}
-	if progress == nil {
-		progress = progression.New()
-	}
-	return &service{db: db, petRepo: petRepo, xpRepo: xpRepo, rewardRepo: rewardRepo, clock: now, progress: progress, notify: notify}
+	return &service{db: db, petRepo: petRepo, xpRepo: xpRepo, rewardRepo: rewardRepo, clock: now, notify: notify}
 }
 
 func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats, error) {
@@ -61,7 +57,7 @@ func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats
 
 func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats, error) {
 	now := s.clock.Now().UTC()
-	localDate := s.progress.MoscowDate(now)
+	localDate := clock.MoscowDate(now)
 	sourceKey := fmt.Sprintf("charge:%s", localDate.Format("2006-01-02"))
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -82,23 +78,24 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 		}
 		return s.stats(value, now), nil
 	}
-	oldLevel := s.progress.LevelFromXP(value.XP)
+	oldLevel := rules.LevelFromXP(value.XP)
 	value.LastChargedAt = now
-	value.XP += s.progress.ChargeXP()
+	value.XP += rules.ChargeXPAmount
 	value.UpdatedAt = now
 	if err := s.petRepo.Update(ctx, tx, *value); err != nil {
 		return nil, err
 	}
 	event := progressionmodel.XPEvent{
 		ID: uuid.New(), UserID: userID, PetID: value.ID, Source: "charge", SourceKey: sourceKey,
-		Amount: s.progress.ChargeXP(), OccurredAt: now, LocalDate: localDate,
+		Amount: rules.ChargeXPAmount, OccurredAt: now, LocalDate: localDate,
 	}
 	if err := s.xpRepo.CreateXPEvent(ctx, tx, event); err != nil {
 		return nil, err
 	}
-	for level := oldLevel + 1; level <= s.progress.LevelFromXP(value.XP); level++ {
+	newLevel := rules.LevelFromXP(value.XP)
+	for level := oldLevel + 1; level <= newLevel; level++ {
 		if s.rewardRepo != nil {
-			if err := s.rewardRepo.UnlockForLevel(ctx, tx, userID, level); err != nil {
+			if err := s.rewardRepo.UnlockForLevel(ctx, tx, userID, level, rules.RewardTypeForLevel(level), now); err != nil {
 				return nil, err
 			}
 		}
@@ -108,7 +105,7 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 	}
 	if s.notify != nil {
 		s.notify.NotifyUser(userID, "pet_updated")
-		if s.progress.LevelFromXP(value.XP) > oldLevel {
+		if newLevel > oldLevel {
 			s.notify.NotifyUser(userID, "rewards_updated")
 		}
 	}
@@ -121,5 +118,5 @@ func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID,
 }
 
 func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
-	return &petmodel.Stats{XP: value.XP, Level: s.progress.LevelFromXP(value.XP), Energy: s.progress.EnergyPercent(value.LastChargedAt, now), LastChargedAt: value.LastChargedAt}
+	return &petmodel.Stats{XP: value.XP, Level: rules.LevelFromXP(value.XP), Energy: rules.EnergyPercent(value.LastChargedAt, now), LastChargedAt: value.LastChargedAt}
 }

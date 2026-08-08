@@ -3,7 +3,6 @@ package rules
 import (
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
 	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
 )
@@ -27,8 +26,6 @@ func EnergyPercent(lastChargedAt, now time.Time) int {
 	}
 	return energy
 }
-
-func MoscowDate(now time.Time) time.Time { return clock.MoscowDate(now) }
 
 func TaskXP(taskType taskmodel.Type) int {
 	switch taskType {

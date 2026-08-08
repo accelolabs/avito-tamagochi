@@ -25,5 +25,6 @@ func New(repo summaryrepository.Repository, now clock.Clock) Service {
 	return &service{repo: repo, now: now}
 }
 func (s *service) GetToday(ctx context.Context, userID uuid.UUID) (*summarymodel.DailySummary, error) {
-	return s.repo.GetToday(ctx, userID, clock.MoscowDate(s.now.Now()))
+	now := s.now.Now().UTC()
+	return s.repo.GetToday(ctx, userID, clock.MoscowDate(now), now)
 }

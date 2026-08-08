@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/notifier"
 	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
@@ -19,10 +20,11 @@ type service struct {
 	db     *sql.DB
 	repo   rewardrepository.Repository
 	notify notifier.Notifier
+	clock  func() time.Time
 }
 
 func New(db *sql.DB, repo rewardrepository.Repository, notify notifier.Notifier) Service {
-	return &service{db: db, repo: repo, notify: notify}
+	return &service{db: db, repo: repo, notify: notify, clock: time.Now}
 }
 func (s *service) GetRewards(ctx context.Context, userID uuid.UUID) ([]rewardmodel.UserReward, error) {
 	return s.repo.GetUserRewards(ctx, userID)
@@ -33,7 +35,7 @@ func (s *service) UseReward(ctx context.Context, userID, rewardID uuid.UUID) (*r
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	value, err := s.repo.Use(ctx, tx, userID, rewardID)
+	value, err := s.repo.Use(ctx, tx, userID, rewardID, s.clock().UTC())
 	if err != nil {
 		return nil, err
 	}

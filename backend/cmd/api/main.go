@@ -18,7 +18,6 @@ import (
 	gamepetrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/repository"
 	gamepetservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
 	gameprogressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
-	gameprogressionservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/service"
 	gamerewardrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/repository"
 	gamerewardservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/service"
 	gamesummaryrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/repository"
@@ -53,12 +52,11 @@ func main() {
 	authHandler := authhandlers.New(authService)
 	hub := realtime.NewHub()
 	go hub.Run()
-	progressionService := gameprogressionservice.New()
 	petRepo := gamepetrepository.New(db)
 	xpRepo := gameprogressionrepository.New(db)
 	rewardRepo := gamerewardrepository.New(db)
-	petService := gamepetservice.New(db, petRepo, xpRepo, rewardRepo, nil, progressionService, hub)
-	taskService := gametaskservice.New(db, gametaskrepository.New(db), petRepo, xpRepo, rewardRepo, nil, progressionService, hub)
+	petService := gamepetservice.New(db, petRepo, xpRepo, rewardRepo, nil, hub)
+	taskService := gametaskservice.New(db, gametaskrepository.New(db), petRepo, xpRepo, rewardRepo, nil, hub)
 	rewardService := gamerewardservice.New(db, rewardRepo, hub)
 	summaryService := gamesummaryservice.New(gamesummaryrepository.New(db), nil)
 	leaderboardService := gameleaderservice.New(gameleaderrepository.New(db))
