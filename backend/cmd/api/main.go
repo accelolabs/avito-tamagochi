@@ -9,9 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
 	authhandlers "github.com/accelolabs/avito-tamagochi/backend/internal/auth/handlers"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	_ "github.com/lib/pq"
 )
 
@@ -35,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	authService := auth.NewService(db, auth.NewRepository(db))
+	authService := service.NewService(db, repository.NewRepository(db))
 	authHandler := authhandlers.New(authService)
 
 	mux := http.NewServeMux()

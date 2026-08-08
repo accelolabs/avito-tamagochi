@@ -1,9 +1,43 @@
-package auth
+package service
 
 import (
+	"context"
+	"database/sql"
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/security"
+	"github.com/google/uuid"
 )
+
+type serviceRepository struct {
+	deleteSession func(context.Context, uuid.UUID) error
+}
+
+func (r serviceRepository) FindUserByEmail(context.Context, string) (*User, error) {
+	return nil, sql.ErrNoRows
+}
+func (r serviceRepository) FindUserByID(context.Context, uuid.UUID) (*User, error) {
+	return nil, sql.ErrNoRows
+}
+func (r serviceRepository) CreateUser(context.Context, *sql.Tx, User) error       { return nil }
+func (r serviceRepository) CreateSession(context.Context, *sql.Tx, Session) error { return nil }
+func (r serviceRepository) FindSession(context.Context, uuid.UUID) (*Session, error) {
+	return nil, sql.ErrNoRows
+}
+func (r serviceRepository) DeleteSession(ctx context.Context, id uuid.UUID) error {
+	return r.deleteSession(ctx, id)
+}
+
+func TestLogoutReturnsRepositoryError(t *testing.T) {
+	wantErr := errors.New("delete session failed")
+	service := NewService(nil, serviceRepository{deleteSession: func(context.Context, uuid.UUID) error { return wantErr }})
+
+	if err := service.Logout(context.Background(), uuid.New()); !errors.Is(err, wantErr) {
+		t.Fatalf("Logout() error = %v, want %v", err, wantErr)
+	}
+}
 
 func TestNormalizeEmail(t *testing.T) {
 	if got := normalizeEmail("  USER@Example.COM "); got != "user@example.com" {
@@ -48,7 +82,7 @@ func TestValidateRegistration(t *testing.T) {
 
 func TestPasswordHash(t *testing.T) {
 	password := "correct horse battery staple"
-	hash, err := hashPassword(password)
+	hash, err := security.HashPassword(password)
 	if err != nil {
 		t.Fatalf("hashPassword() error = %v", err)
 	}
@@ -58,10 +92,10 @@ func TestPasswordHash(t *testing.T) {
 	if !strings.HasPrefix(hash, "$argon2id$v=") {
 		t.Fatalf("hash does not use Argon2id PHC format: %q", hash)
 	}
-	if !verifyPassword(password, hash) {
+	if !security.VerifyPassword(password, hash) {
 		t.Fatal("verifyPassword() rejected the original password")
 	}
-	if verifyPassword("wrong password", hash) {
+	if security.VerifyPassword("wrong password", hash) {
 		t.Fatal("verifyPassword() accepted a wrong password")
 	}
 }

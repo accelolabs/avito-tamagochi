@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"context"
@@ -8,15 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/security"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
-)
-
-var (
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrSessionNotFound    = errors.New("session not found")
-	ErrInvalidInput       = errors.New("invalid input")
 )
 
 const (
@@ -25,48 +19,19 @@ const (
 	sessionLifetime   = 7 * 24 * time.Hour
 )
 
-type User struct {
-	ID           uuid.UUID
-	Email        string
-	DisplayName  string
-	PasswordHash string
-	CreatedAt    time.Time
-}
+type User = auth.User
+type Session = auth.Session
+type RegisterInput = auth.RegisterInput
+type LoginInput = auth.LoginInput
+type Repository = auth.Repository
+type Service = auth.Service
 
-type Session struct {
-	ID        uuid.UUID
-	UserID    uuid.UUID
-	ExpiresAt time.Time
-	CreatedAt time.Time
-}
-
-type RegisterInput struct {
-	Email       string
-	Password    string
-	DisplayName string
-}
-
-type LoginInput struct {
-	Email    string
-	Password string
-}
-
-type Repository interface {
-	FindUserByEmail(context.Context, string) (*User, error)
-	FindUserByID(context.Context, uuid.UUID) (*User, error)
-	CreateUser(context.Context, *sql.Tx, User) error
-	CreateSession(context.Context, *sql.Tx, Session) error
-	FindSession(context.Context, uuid.UUID) (*Session, error)
-	DeleteSession(context.Context, uuid.UUID) error
-}
-
-type Service interface {
-	Register(context.Context, RegisterInput) (*User, *Session, error)
-	Login(context.Context, LoginInput) (*User, *Session, error)
-	Logout(context.Context, uuid.UUID) error
-	ValidateSession(context.Context, uuid.UUID) (uuid.UUID, error)
-	FindUser(context.Context, uuid.UUID) (*User, error)
-}
+var (
+	ErrEmailAlreadyExists = auth.ErrEmailAlreadyExists
+	ErrInvalidCredentials = auth.ErrInvalidCredentials
+	ErrSessionNotFound    = auth.ErrSessionNotFound
+	ErrInvalidInput       = auth.ErrInvalidInput
+)
 
 type service struct {
 	db   *sql.DB
@@ -84,7 +49,7 @@ func (s *service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 		return nil, nil, err
 	}
 
-	hash, err := hashPassword(input.Password)
+	hash, err := security.HashPassword(input.Password)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -99,9 +64,6 @@ func (s *service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 	defer func() { _ = tx.Rollback() }()
 
 	if err := s.repo.CreateUser(ctx, tx, user); err != nil {
-		if isUniqueViolation(err) {
-			return nil, nil, ErrEmailAlreadyExists
-		}
 		return nil, nil, err
 	}
 	if err := s.repo.CreateSession(ctx, tx, session); err != nil {
@@ -115,7 +77,7 @@ func (s *service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 
 func (s *service) Login(ctx context.Context, input LoginInput) (*User, *Session, error) {
 	email := normalizeEmail(input.Email)
-	if email == "" || !validPassword(input.Password) {
+	if email == "" || !security.ValidPassword(input.Password) {
 		return nil, nil, ErrInvalidInput
 	}
 
@@ -126,7 +88,7 @@ func (s *service) Login(ctx context.Context, input LoginInput) (*User, *Session,
 		}
 		return nil, nil, err
 	}
-	if !verifyPassword(input.Password, user.PasswordHash) {
+	if !security.VerifyPassword(input.Password, user.PasswordHash) {
 		return nil, nil, ErrInvalidCredentials
 	}
 
@@ -147,11 +109,7 @@ func (s *service) Login(ctx context.Context, input LoginInput) (*User, *Session,
 }
 
 func (s *service) Logout(ctx context.Context, sessionID uuid.UUID) error {
-	err := s.repo.DeleteSession(ctx, sessionID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	return err
+	return s.repo.DeleteSession(ctx, sessionID)
 }
 
 func (s *service) ValidateSession(ctx context.Context, sessionID uuid.UUID) (uuid.UUID, error) {
@@ -186,7 +144,7 @@ func validateRegistration(email, password, displayName string) error {
 	if err != nil || parsed.Address != email {
 		return ErrInvalidInput
 	}
-	if !validPassword(password) {
+	if !security.ValidPassword(password) {
 		return ErrInvalidInput
 	}
 	if len(displayName) < minDisplayNameLen || len(displayName) > maxDisplayNameLen {
@@ -198,9 +156,4 @@ func validateRegistration(email, password, displayName string) error {
 		}
 	}
 	return nil
-}
-
-func isUniqueViolation(err error) bool {
-	var pqErr *pq.Error
-	return errors.As(err, &pqErr) && pqErr.Code == "23505"
 }

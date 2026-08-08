@@ -1,4 +1,4 @@
-package auth
+package security
 
 import (
 	"github.com/alexedwards/argon2id"
@@ -17,15 +17,15 @@ var passwordParams = &argon2id.Params{
 	KeyLength:   32,
 }
 
-func validPassword(password string) bool {
+func ValidPassword(password string) bool {
 	return len(password) >= minPasswordLength && len(password) <= maxPasswordLength
 }
 
-func hashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	return argon2id.CreateHash(password, passwordParams)
 }
 
-func verifyPassword(password, encoded string) bool {
+func VerifyPassword(password, encoded string) bool {
 	match, err := argon2id.ComparePasswordAndHash(password, encoded)
 	return err == nil && match
 }

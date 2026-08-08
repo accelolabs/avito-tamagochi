@@ -16,15 +16,25 @@ import (
 
 type fakeService struct {
 	register func(auth.RegisterInput) (*auth.User, *auth.Session, error)
+	login    func(auth.LoginInput) (*auth.User, *auth.Session, error)
+	logout   func(uuid.UUID) error
 }
 
 func (f fakeService) Register(_ context.Context, input auth.RegisterInput) (*auth.User, *auth.Session, error) {
 	return f.register(input)
 }
-func (fakeService) Login(context.Context, auth.LoginInput) (*auth.User, *auth.Session, error) {
-	return nil, nil, errors.New("not implemented")
+func (f fakeService) Login(_ context.Context, input auth.LoginInput) (*auth.User, *auth.Session, error) {
+	if f.login == nil {
+		return nil, nil, errors.New("not implemented")
+	}
+	return f.login(input)
 }
-func (fakeService) Logout(context.Context, uuid.UUID) error { return nil }
+func (f fakeService) Logout(_ context.Context, sessionID uuid.UUID) error {
+	if f.logout == nil {
+		return nil
+	}
+	return f.logout(sessionID)
+}
 func (fakeService) ValidateSession(context.Context, uuid.UUID) (uuid.UUID, error) {
 	return uuid.Nil, sql.ErrNoRows
 }
@@ -76,5 +86,47 @@ func TestRegisterMapsDuplicateEmail(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), `"code":"email_already_exists"`) {
 		t.Fatalf("unexpected error body: %s", response.Body.String())
+	}
+}
+
+func TestLoginSetsSessionCookieAndReturnsUser(t *testing.T) {
+	userID := uuid.New()
+	sessionID := uuid.New()
+	service := fakeService{login: func(input auth.LoginInput) (*auth.User, *auth.Session, error) {
+		if input.Email != "user@example.com" || input.Password != "password" {
+			t.Fatalf("unexpected login input: %+v", input)
+		}
+		return &auth.User{ID: userID, Email: input.Email, DisplayName: "Player"}, &auth.Session{ID: sessionID, ExpiresAt: time.Now().Add(time.Hour)}, nil
+	}}
+	handler := New(service)
+	mux := http.NewServeMux()
+	handler.SetRoutes(mux)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"email":"user@example.com","password":"password"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	cookie := response.Result().Cookies()[0]
+	if cookie.Name != sessionCookieName || cookie.Value != sessionID.String() || !cookie.HttpOnly {
+		t.Fatalf("unexpected session cookie: %+v", cookie)
+	}
+}
+
+func TestLogoutClearsCookieWithoutRequestCookie(t *testing.T) {
+	handler := New(fakeService{})
+	mux := http.NewServeMux()
+	handler.SetRoutes(mux)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil))
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+	cookie := response.Result().Cookies()[0]
+	if cookie.Name != sessionCookieName || cookie.MaxAge != -1 {
+		t.Fatalf("unexpected cleared cookie: %+v", cookie)
 	}
 }
