@@ -48,9 +48,15 @@ func TestValidateRegistration(t *testing.T) {
 
 func TestPasswordHash(t *testing.T) {
 	password := "correct horse battery staple"
-	hash := hashPassword(password)
+	hash, err := hashPassword(password)
+	if err != nil {
+		t.Fatalf("hashPassword() error = %v", err)
+	}
 	if strings.Contains(hash, password) {
 		t.Fatal("password hash contains plaintext password")
+	}
+	if !strings.HasPrefix(hash, "$argon2id$v=") {
+		t.Fatalf("hash does not use Argon2id PHC format: %q", hash)
 	}
 	if !verifyPassword(password, hash) {
 		t.Fatal("verifyPassword() rejected the original password")

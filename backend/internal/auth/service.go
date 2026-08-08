@@ -2,10 +2,7 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/subtle"
 	"database/sql"
-	"encoding/base64"
 	"errors"
 	"net/mail"
 	"strings"
@@ -13,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"golang.org/x/crypto/argon2"
 )
 
 var (
@@ -24,8 +20,6 @@ var (
 )
 
 const (
-	minPasswordLength = 8
-	maxPasswordLength = 128
 	minDisplayNameLen = 2
 	maxDisplayNameLen = 32
 	sessionLifetime   = 7 * 24 * time.Hour
@@ -90,7 +84,10 @@ func (s *service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 		return nil, nil, err
 	}
 
-	hash := hashPassword(input.Password)
+	hash, err := hashPassword(input.Password)
+	if err != nil {
+		return nil, nil, err
+	}
 	now := s.now().UTC()
 	user := User{ID: uuid.New(), Email: email, DisplayName: input.DisplayName, PasswordHash: hash, CreatedAt: now}
 	session := newSession(user.ID, now)
@@ -118,7 +115,7 @@ func (s *service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 
 func (s *service) Login(ctx context.Context, input LoginInput) (*User, *Session, error) {
 	email := normalizeEmail(input.Email)
-	if email == "" || len(input.Password) < minPasswordLength || len(input.Password) > maxPasswordLength {
+	if email == "" || !validPassword(input.Password) {
 		return nil, nil, ErrInvalidInput
 	}
 
@@ -189,7 +186,7 @@ func validateRegistration(email, password, displayName string) error {
 	if err != nil || parsed.Address != email {
 		return ErrInvalidInput
 	}
-	if len(password) < minPasswordLength || len(password) > maxPasswordLength {
+	if !validPassword(password) {
 		return ErrInvalidInput
 	}
 	if len(displayName) < minDisplayNameLen || len(displayName) > maxDisplayNameLen {
@@ -201,25 +198,6 @@ func validateRegistration(email, password, displayName string) error {
 		}
 	}
 	return nil
-}
-
-func hashPassword(password string) string {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		panic("crypto/rand failed")
-	}
-	hash := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
-	encoded := append(append([]byte{}, salt...), hash...)
-	return base64.RawStdEncoding.EncodeToString(encoded)
-}
-
-func verifyPassword(password, encoded string) bool {
-	decoded, err := base64.RawStdEncoding.DecodeString(encoded)
-	if err != nil || len(decoded) != 48 {
-		return false
-	}
-	hash := argon2.IDKey([]byte(password), decoded[:16], 1, 64*1024, 4, 32)
-	return subtle.ConstantTimeCompare(hash, decoded[16:]) == 1
 }
 
 func isUniqueViolation(err error) bool {
