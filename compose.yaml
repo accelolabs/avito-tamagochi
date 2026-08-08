@@ -33,7 +33,7 @@ services:
   migrate:
     build:
       context: ./backend
-    command: ["migrate"]
+    entrypoint: ["migrate"]
     environment:
       DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
       MIGRATIONS_DIR: "/migrations"
