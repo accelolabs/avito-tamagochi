@@ -1,43 +1,32 @@
 package realtime
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// Для MVP и хакатона разрешаем любые CORS запросы,
-	// так как Nginx сам всё смаршрутизирует
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-// ServeWS — хендлер для Gin, ожидается, что он стоит ПОСЛЕ Auth Middleware
-func ServeWS(hub *Hub) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Достаем ID пользователя из контекста (положил Auth Middleware)
-		userIDRaw, exists := c.Get("userID")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			return
-		}
-
-		userID, ok := userIDRaw.(uuid.UUID)
+// ServeWS upgrades an authenticated HTTP request to a WebSocket connection.
+func ServeWS(hub *Hub) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := middleware.UserID(r.Context())
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id type"})
+			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 			return
 		}
 
-		// Обновляем HTTP до WebSocket
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			// Ошибку логирует сам Upgrader
 			return
 		}
 
@@ -45,14 +34,22 @@ func ServeWS(hub *Hub) gin.HandlerFunc {
 			hub:    hub,
 			userID: userID,
 			conn:   conn,
-			send:   make(chan string, 256), // Буфер на 256 непрочитанных событий
+			send:   make(chan string, 256),
 		}
 
-		// Регистрируем клиента в Хабе
 		client.hub.register <- client
-
-		// Запускаем воркеры в отдельных горутинах
 		go client.writePump()
 		go client.readPump()
-	}
+	})
+}
+
+type errorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(errorResponse{Code: code, Message: message})
 }

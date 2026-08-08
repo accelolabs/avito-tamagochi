@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/lib/pq v1.12.3
 	github.com/pressly/goose/v3 v3.24.3
 )

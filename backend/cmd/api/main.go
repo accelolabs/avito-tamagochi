@@ -13,6 +13,7 @@ import (
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/realtime"
 	_ "github.com/lib/pq"
 )
 
@@ -38,11 +39,14 @@ func main() {
 
 	authService := service.NewService(db, repository.NewRepository(db))
 	authHandler := authhandlers.New(authService)
+	hub := realtime.NewHub()
+	go hub.Run()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", health)
 	authHandler.SetRoutes(mux)
 	mux.Handle("GET /api/v1/auth/me", middleware.RequireSession(authService, http.HandlerFunc(authHandler.Me)))
+	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
 	log.Printf("server started on http://localhost:%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, mux))

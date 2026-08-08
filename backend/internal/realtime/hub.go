@@ -4,29 +4,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// EventNotifier - интерфейс, который мы будем передавать другим сервисам (Pet, Tasks),
-// чтобы они могли отправлять уведомления, ничего не зная про вебсокеты.
+// EventNotifier lets business services publish user-scoped events without
+// depending on the WebSocket implementation.
 type EventNotifier interface {
 	NotifyUser(userID uuid.UUID, eventType string)
 }
 
-// Notification описывает структуру тонкого события
 type Notification struct {
 	UserID    uuid.UUID
 	EventType string
 }
 
 type Hub struct {
-	// clients: userID -> набор активных подключений (вкладок)
-	clients map[uuid.UUID]map[*Client]bool
-
-	// Канал для отправки событий конкретным юзерам
-	notify chan Notification
-
-	// Регистрация новых подключений
-	register chan *Client
-
-	// Удаление отключившихся клиентов
+	clients    map[uuid.UUID]map[*Client]bool
+	notify     chan Notification
+	register   chan *Client
 	unregister chan *Client
 }
 
@@ -39,7 +31,7 @@ func NewHub() *Hub {
 	}
 }
 
-// Run запускается в отдельной горутине при старте сервера
+// Run processes connection lifecycle and notification events.
 func (h *Hub) Run() {
 	for {
 		select {
@@ -54,7 +46,6 @@ func (h *Hub) Run() {
 				if _, exists := connections[client]; exists {
 					delete(connections, client)
 					close(client.send)
-					// Если закрыли последнюю вкладку — удаляем юзера из мапы
 					if len(connections) == 0 {
 						delete(h.clients, client.userID)
 					}
@@ -62,14 +53,11 @@ func (h *Hub) Run() {
 			}
 
 		case notification := <-h.notify:
-			// Ищем все активные подключения этого юзера и рассылаем пинг
 			if connections, ok := h.clients[notification.UserID]; ok {
 				for client := range connections {
 					select {
 					case client.send <- notification.EventType:
-						// Успешно отправлено
 					default:
-						// Канал забит, клиент завис — отключаем
 						close(client.send)
 						delete(connections, client)
 					}
@@ -82,7 +70,6 @@ func (h *Hub) Run() {
 	}
 }
 
-// NotifyUser реализует интерфейс EventNotifier для других модулей
 func (h *Hub) NotifyUser(userID uuid.UUID, eventType string) {
 	h.notify <- Notification{
 		UserID:    userID,

@@ -15,7 +15,6 @@ const (
 	maxMessageSize = 512
 )
 
-// WSEvent — JSON структура, которая улетит фронтенду
 type WSEvent struct {
 	Event string `json:"event"`
 }
@@ -27,7 +26,6 @@ type Client struct {
 	send   chan string
 }
 
-// readPump слушает входящие сообщения от фронтенда.
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
@@ -50,7 +48,6 @@ func (c *Client) readPump() {
 	}
 }
 
-// writePump пересылает события из Go-канала в вебсокет
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
