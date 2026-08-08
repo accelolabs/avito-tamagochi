@@ -1,0 +1,95 @@
+package handlers
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth"
+	"github.com/google/uuid"
+)
+
+const sessionCookieName = "session_id"
+
+type Handler struct {
+	service auth.Service
+	secure  bool
+}
+
+func New(service auth.Service) *Handler {
+	return &Handler{service: service, secure: os.Getenv("APP_SECURE_COOKIES") == "true"}
+}
+
+func (h *Handler) SetRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v1/auth/register", h.register)
+	mux.HandleFunc("POST /api/v1/auth/login", h.login)
+	mux.HandleFunc("POST /api/v1/auth/logout", h.logout)
+}
+
+type userResponse struct {
+	ID          uuid.UUID `json:"id"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"displayName"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+type errorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func writeJSON(w http.ResponseWriter, status int, value any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(value)
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, errorResponse{Code: code, Message: message})
+}
+
+func toUserResponse(user *auth.User) userResponse {
+	return userResponse{ID: user.ID, Email: user.Email, DisplayName: user.DisplayName, CreatedAt: user.CreatedAt}
+}
+
+func (h *Handler) setSessionCookie(w http.ResponseWriter, session *auth.Session) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    session.ID.String(),
+		Path:     "/",
+		Expires:  session.ExpiresAt,
+		MaxAge:   int(time.Until(session.ExpiresAt).Seconds()),
+		HttpOnly: true,
+		Secure:   h.secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func (h *Handler) clearSessionCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, Expires: time.Unix(1, 0).UTC(), HttpOnly: true, Secure: h.secure, SameSite: http.SameSiteLaxMode})
+}
+
+func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", "request body is invalid")
+		return false
+	}
+	return true
+}
+
+func mapServiceError(w http.ResponseWriter, err error, _ bool) {
+	switch {
+	case errors.Is(err, auth.ErrInvalidInput):
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+	case errors.Is(err, auth.ErrEmailAlreadyExists):
+		writeError(w, http.StatusConflict, "email_already_exists", "email is already registered")
+	case errors.Is(err, auth.ErrInvalidCredentials):
+		writeError(w, http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect")
+	default:
+		writeError(w, http.StatusInternalServerError, "internal_error", "internal server error")
+	}
+}

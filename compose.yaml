@@ -20,8 +20,8 @@ services:
       APP_PORT: "8080"
       DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     expose:
       - "8080"
     healthcheck:
@@ -29,6 +29,17 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrate:
+    build:
+      context: ./backend
+    command: ["migrate"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+      MIGRATIONS_DIR: "/migrations"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
