@@ -1,0 +1,18 @@
+:root {
+    --color-bg: #f2f1f0;
+    --color-bg-default: #ffffff;
+    --color-default-hover: #ff4053;
+    --color-primary: #00aaff;
+    --color-primary-hover: #0073e5;
+    --color-progressbar-bg: #dbdbd9;
+    --color-secondary: #965eeb;
+    --color-secondary-hover: #7a4cbe;
+    --color-secondary-light: #e9ddfd;
+    --color-tetriary: #02d15c;
+    --color-tetiary-hover: #02a84a;
+    --color-text-primary: #000000;
+    --color-text-secondary: #3e4851;
+    --color-text-tetriary: #ffffff;
+
+    font-family: "Manrope Variable", sans-serif;
+}
