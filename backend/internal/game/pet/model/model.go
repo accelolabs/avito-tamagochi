@@ -6,6 +6,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type Stage string
+
+const (
+	Egg   Stage = "egg"
+	Child Stage = "child"
+	Teen  Stage = "teen"
+	Adult Stage = "adult"
+)
+
 type Pet struct {
 	ID            uuid.UUID
 	UserID        uuid.UUID
@@ -18,6 +27,7 @@ type Pet struct {
 type Stats struct {
 	XP            int
 	Level         int
+	Stage         Stage
 	Energy        int
 	LastChargedAt time.Time
 }

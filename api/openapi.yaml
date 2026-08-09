@@ -279,10 +279,11 @@ components:
 
     Pet:
       type: object
-      required: [xp, level, energy, lastChargedAt]
+      required: [xp, level, stage, energy, lastChargedAt]
       properties:
         xp: { type: integer }
         level: { type: integer }
+        stage: { type: string, enum: [egg, child, teen, adult] }
         energy: { type: integer, minimum: 0, maximum: 100 }
         lastChargedAt: { type: string, format: date-time }
     Tasks:

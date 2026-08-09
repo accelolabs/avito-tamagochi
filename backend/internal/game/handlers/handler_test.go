@@ -16,18 +16,18 @@ import (
 type fakeGameService struct{}
 
 func (fakeGameService) GetPet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {
-	return &petmodel.Stats{XP: 100, Level: 2, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()}, nil
+	return &petmodel.Stats{XP: 100, Level: 2, Stage: petmodel.Egg, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()}, nil
 }
 
 func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {
-	return &petmodel.Stats{XP: 110, Level: 2, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()}, nil
+	return &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()}, nil
 }
 
 var _ petservice.Service = fakeGameService{}
 
 func TestPetResponseMapping(t *testing.T) {
-	response := toPetResponse(&petmodel.Stats{XP: 100, Level: 2, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()})
-	if response.XP != 100 || response.Level != 2 || response.Energy != 50 {
+	response := toPetResponse(&petmodel.Stats{XP: 100, Level: 2, Stage: petmodel.Egg, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()})
+	if response.XP != 100 || response.Level != 2 || response.Stage != petmodel.Egg || response.Energy != 50 {
 		t.Fatalf("unexpected pet response: %+v", response)
 	}
 }

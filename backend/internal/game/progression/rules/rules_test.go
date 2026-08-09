@@ -2,6 +2,7 @@ package rules
 
 import (
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
+	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
 	"testing"
@@ -12,6 +13,22 @@ func TestLevelFromXP(t *testing.T) {
 	for _, test := range []struct{ xp, level int }{{0, 1}, {99, 1}, {100, 2}, {200, 3}} {
 		if got := LevelFromXP(test.xp); got != test.level {
 			t.Errorf("LevelFromXP(%d) = %d, want %d", test.xp, got, test.level)
+		}
+	}
+}
+
+func TestStageFromLevel(t *testing.T) {
+	for _, test := range []struct {
+		level int
+		want  petmodel.Stage
+	}{
+		{1, petmodel.Egg}, {2, petmodel.Egg},
+		{3, petmodel.Child}, {5, petmodel.Child},
+		{6, petmodel.Teen}, {8, petmodel.Teen},
+		{9, petmodel.Adult}, {100, petmodel.Adult}, {-1, petmodel.Egg},
+	} {
+		if got := StageFromLevel(test.level); got != test.want {
+			t.Errorf("StageFromLevel(%d) = %q, want %q", test.level, got, test.want)
 		}
 	}
 }

@@ -9,10 +9,11 @@ import (
 )
 
 type petResponse struct {
-	XP            int       `json:"xp"`
-	Level         int       `json:"level"`
-	Energy        int       `json:"energy"`
-	LastChargedAt time.Time `json:"lastChargedAt"`
+	XP            int            `json:"xp"`
+	Level         int            `json:"level"`
+	Stage         petmodel.Stage `json:"stage"`
+	Energy        int            `json:"energy"`
+	LastChargedAt time.Time      `json:"lastChargedAt"`
 }
 
 func (h *Handler) getPet(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +56,7 @@ func toPetResponse(stats *petmodel.Stats) petResponse {
 	return petResponse{
 		XP:            stats.XP,
 		Level:         stats.Level,
+		Stage:         stats.Stage,
 		Energy:        stats.Energy,
 		LastChargedAt: stats.LastChargedAt,
 	}

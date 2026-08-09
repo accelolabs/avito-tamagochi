@@ -118,5 +118,6 @@ func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID,
 }
 
 func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
-	return &petmodel.Stats{XP: value.XP, Level: rules.LevelFromXP(value.XP), Energy: rules.EnergyPercent(value.LastChargedAt, now), LastChargedAt: value.LastChargedAt}
+	level := rules.LevelFromXP(value.XP)
+	return &petmodel.Stats{XP: value.XP, Level: level, Stage: rules.StageFromLevel(level), Energy: rules.EnergyPercent(value.LastChargedAt, now), LastChargedAt: value.LastChargedAt}
 }

@@ -3,6 +3,7 @@ package rules
 import (
 	"time"
 
+	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
 )
@@ -14,6 +15,19 @@ func LevelFromXP(xp int) int {
 		xp = 0
 	}
 	return xp/100 + 1
+}
+
+func StageFromLevel(level int) petmodel.Stage {
+	switch {
+	case level >= 9:
+		return petmodel.Adult
+	case level >= 6:
+		return petmodel.Teen
+	case level >= 3:
+		return petmodel.Child
+	default:
+		return petmodel.Egg
+	}
 }
 
 func EnergyPercent(lastChargedAt, now time.Time) int {
