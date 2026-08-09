@@ -20,7 +20,7 @@ function Sidebar() {
     setLoggingOut(true)
     try {
       await logout()
-      navigate('/auth', { replace: true })
+      void navigate('/auth', { replace: true })
     } finally {
       setLoggingOut(false)
     }
@@ -51,7 +51,7 @@ function Sidebar() {
       </div>
 
       <footer className="sidebar__footer">
-        <button className="sidebar__exit" type="button" disabled={loggingOut} onClick={handleLogout}>
+        <button className="sidebar__exit" type="button" disabled={loggingOut} onClick={() => { void handleLogout() }}>
           <span aria-hidden="true">↪</span>
           {loggingOut ? 'Выходим…' : 'Выйти'}
         </button>

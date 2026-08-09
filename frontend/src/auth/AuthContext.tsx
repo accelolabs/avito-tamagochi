@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true
     api.getMe()
       .then((currentUser) => {
-        if (active) setUser(currentUser)
+        if (active) {setUser(currentUser)}
       })
       .catch((error: unknown) => {
         if (active && (!(error instanceof ApiError) || error.status !== 401)) {
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (active) {setLoading(false)}
       })
     return () => {
       active = false
@@ -65,6 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth must be used inside AuthProvider')
+  if (!context) {throw new Error('useAuth must be used inside AuthProvider')}
   return context
 }

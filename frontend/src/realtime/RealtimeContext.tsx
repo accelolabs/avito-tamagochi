@@ -39,7 +39,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         }
       }
       socket.onclose = () => {
-        if (!active) return
+        if (!active) {return}
         attempts += 1
         const delay = Math.min(1000 * 2 ** (attempts - 1), 30000)
         reconnectTimer = window.setTimeout(connect, delay)
@@ -49,7 +49,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     connect()
     return () => {
       active = false
-      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer)
+      if (reconnectTimer !== null) {window.clearTimeout(reconnectTimer)}
       socket?.close()
     }
   }, [])

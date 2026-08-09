@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true)
+    if (showLoading) {setLoading(true)}
     setError(null)
     try {
       const [petValue, summaryValue, leaderboardValue, rewardValues] = await Promise.all([
@@ -49,12 +49,12 @@ export default function Dashboard() {
     return () => window.clearTimeout(timer)
   }, [load])
   useEffect(() => {
-    if (!event) return
+    if (!event) {return}
     const timer = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timer)
   }, [event, load])
   useEffect(() => {
-    if (!pet) return
+    if (!pet) {return}
     const update = () => setEnergy(currentEnergy(pet.lastChargedAt))
     const timer = window.setInterval(update, 30000)
     return () => window.clearInterval(timer)
@@ -78,8 +78,8 @@ export default function Dashboard() {
     }
   }
 
-  if (loading) return <div className="dashboard-page"><div className="page-state">Загружаем питомца…</div></div>
-  if (!pet || !summary) return <div className="dashboard-page"><div className="page-state page-state--error">{error ?? 'Данные питомца недоступны.'}</div></div>
+  if (loading) {return <div className="dashboard-page"><div className="page-state">Загружаем питомца…</div></div>}
+  if (!pet || !summary) {return <div className="dashboard-page"><div className="page-state page-state--error">{error ?? 'Данные питомца недоступны.'}</div></div>}
 
   return (
     <div className="dashboard-page">
@@ -93,7 +93,7 @@ export default function Dashboard() {
             <Progress label="XP до следующего уровня" value={`${levelProgress} / 100`} percent={levelProgress} kind="xp" />
             <Progress label="Батарея" value={`${energy}%`} percent={energy} kind="battery" />
           </div>
-          <button className="dashboard__charge" type="button" disabled={charging} onClick={charge}>
+          <button className="dashboard__charge" type="button" disabled={charging} onClick={() => { void charge() }}>
             <span aria-hidden="true">⚡</span>{charging ? 'Заряжаем…' : 'Зарядить'}
           </button>
         </section>

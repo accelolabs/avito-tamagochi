@@ -34,7 +34,7 @@ export default function Tasks() {
     return () => window.clearTimeout(timer)
   }, [load])
   useEffect(() => {
-    if (event?.name !== 'tasks_updated') return
+    if (event?.name !== 'tasks_updated') {return}
     const timer = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timer)
   }, [event, load])
@@ -52,7 +52,7 @@ export default function Tasks() {
     }
   }
 
-  if (loading) return <div className="tasks-container"><div className="page-state">Загружаем задания…</div></div>
+  if (loading) {return <div className="tasks-container"><div className="page-state">Загружаем задания…</div></div>}
 
   return (
     <div className="tasks-container">
@@ -68,7 +68,7 @@ export default function Tasks() {
         </section>
         <div className="tasks__list">
           {tasks.length === 0 && !error && <div className="page-state">Сегодня заданий нет.</div>}
-          {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => complete(task)} />)}
+          {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => { void complete(task) }} />)}
         </div>
       </div>
     </div>

@@ -28,12 +28,12 @@ export default function Leaderboard() {
     return () => window.clearTimeout(timer)
   }, [load])
   useEffect(() => {
-    if (event?.name !== 'pet_updated') return
+    if (event?.name !== 'pet_updated') {return}
     const timer = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timer)
   }, [event, load])
 
-  if (loading) return <div className="leaderboard__page"><div className="page-state">Загружаем лидерборд…</div></div>
+  if (loading) {return <div className="leaderboard__page"><div className="page-state">Загружаем лидерборд…</div></div>}
 
   return (
     <div className="leaderboard__page">
