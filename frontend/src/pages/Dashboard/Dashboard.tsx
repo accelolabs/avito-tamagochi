@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './Dashboard.css'
 import { api } from '../../api/client'
 import type { Leaderboard, Pet, Reward, Summary } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
 import PetVisual, { stageLabel } from '../../components/PetVisual/PetVisual'
 import { useGameEvent } from '../../realtime/RealtimeContext'
 
@@ -14,7 +13,6 @@ function currentEnergy(lastChargedAt: string) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth()
   const event = useGameEvent()
   const [pet, setPet] = useState<Pet | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -87,7 +85,7 @@ export default function Dashboard() {
         {error && <p className="dashboard__error" role="alert">{error}</p>}
         <section className="dashboard__pet-card">
           <div className="dashboard__pet-image"><PetVisual stage={pet.stage} /></div>
-          <div className="dashboard__pet-name">Питомец {user?.displayName}</div>
+          <div className="dashboard__pet-name">K1-T4</div>
           <div className="dashboard__pet-phase">{stageLabel(pet.stage)} · уровень {pet.level}</div>
           <div className="dashboard__progress-bars">
             <Progress label="XP до следующего уровня" value={`${levelProgress} / 100`} percent={levelProgress} kind="xp" />

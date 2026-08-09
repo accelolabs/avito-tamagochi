@@ -13,7 +13,7 @@ MVP виртуального питомца, который развиваетс
 
 ## Стек
 
-- Frontend: React 19, TypeScript, Vite, ESLint, Nginx.
+- Frontend: React 19, TypeScript, Vite, ESLint, Caddy.
 - Backend: Go 1.26, стандартный `net/http`.
 - Data: PostgreSQL 18.
 - Infrastructure: Docker Compose.
@@ -36,6 +36,19 @@ docker compose ps
 docker compose down
 ```
 
+### Production HTTPS
+
+Для запуска на домене укажите в `.env`:
+
+```dotenv
+SITE_ADDRESS=tamagochi.example.ru
+FRONTEND_PORT=80
+FRONTEND_HTTPS_PORT=443
+APP_SECURE_COOKIES=true
+```
+
+DNS-запись домена должна указывать на сервер, а входящие TCP-порты `80` и `443` и UDP-порт `443` должны быть открыты. Caddy автоматически получает и продлевает TLS-сертификат. Сертификаты и ключи хранятся в Docker volume `caddy_data`; не удаляйте его при обновлении приложения.
+
 ## Проверки
 
 ```bash
@@ -48,11 +61,11 @@ Backend-конфигурация линтера находится в `.golangci
 
 ## Архитектура и ограничения MVP
 
-- Приложение остаётся модульным монолитом; публичной точкой входа служит Nginx.
+- Приложение остаётся модульным монолитом; единственной публичной точкой входа служит Caddy.
 - HTTP API доступен под `/api/v1`, WebSocket — под `/ws`; полный контракт находится в `api/openapi.yaml`.
 - Игровые изменения выполняются синхронно в PostgreSQL-транзакциях. Redis, очереди, cron и фоновые начисления не используются.
 - Действия Авито и применение бонусов являются mock-операциями; реальной интеграции с классифайдом и промокодами нет.
-- Локальный deployment обеспечен Docker Compose. Публичный URL, TLS, внешний secret storage, резервное копирование и production-мониторинг в MVP не настроены.
+- Локальный и доменный deployment обеспечены Docker Compose; Caddy автоматически настраивает TLS для домена. Внешний secret storage, резервное копирование и production-мониторинг в MVP не настроены.
 
 ## Использование ИИ
 

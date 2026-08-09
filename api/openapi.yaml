@@ -7,7 +7,7 @@ info:
 
 servers:
   - url: /api/v1
-    description: HTTP API through Nginx
+    description: HTTP API through Caddy
 
 security:
   - sessionCookie: []
@@ -109,7 +109,7 @@ paths:
         send an initial snapshot.
       servers:
         - url: /
-          description: WebSocket endpoint through Nginx
+          description: WebSocket endpoint through Caddy
       x-websocket-messages:
         $ref: "#/components/schemas/WSEvent"
       responses:

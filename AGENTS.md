@@ -25,7 +25,7 @@ cd frontend && npm run lint && npm run build
 ## Rules
 
 - Keep the system as a simple modular monolith. Do not add microservices, Redis, or message brokers.
-- Nginx is the only public entry point. HTTP API routes use `/api`; WebSocket uses `/ws`.
+- Caddy is the only public entry point. HTTP API routes use `/api`; WebSocket uses `/ws`.
 - PostgreSQL is the single source of truth.
 - Only the backend calculates XP, levels, and rewards.
 - Use transactions and database constraints to protect state-changing operations from partial updates and duplicate rewards.
