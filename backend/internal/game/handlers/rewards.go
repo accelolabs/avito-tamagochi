@@ -24,7 +24,7 @@ type rewardsResponse struct {
 func (h *Handler) getRewards(w http.ResponseWriter, r *http.Request) {
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	items, err := h.rewardsService.GetRewards(r.Context(), id)
@@ -36,18 +36,18 @@ func (h *Handler) getRewards(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		result.Rewards = append(result.Rewards, toRewardResponse(item))
 	}
-	writeJSON(w, 200, result)
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (h *Handler) useReward(w http.ResponseWriter, r *http.Request) {
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	rewardID, err := uuid.Parse(r.PathValue("rewardID"))
 	if err != nil {
-		writeError(w, 400, "validation_error", "request is invalid")
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 		return
 	}
 	item, err := h.rewardsService.UseReward(r.Context(), id, rewardID)
@@ -55,7 +55,7 @@ func (h *Handler) useReward(w http.ResponseWriter, r *http.Request) {
 		mapGameError(w, err)
 		return
 	}
-	writeJSON(w, 200, toRewardResponse(*item))
+	writeJSON(w, http.StatusOK, toRewardResponse(*item))
 }
 
 func toRewardResponse(item rewardmodel.UserReward) rewardResponse {

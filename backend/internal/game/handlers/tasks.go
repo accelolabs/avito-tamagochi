@@ -22,7 +22,7 @@ type tasksResponse struct {
 func (h *Handler) getTodayTasks(w http.ResponseWriter, r *http.Request) {
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	items, err := h.tasksService.GetTodayTasks(r.Context(), id)
@@ -38,23 +38,23 @@ func (h *Handler) getTodayTasks(w http.ResponseWriter, r *http.Request) {
 		}
 		result.Tasks = append(result.Tasks, taskResponse{Type: item.TaskType, Progress: item.Progress, RequiredCount: item.RequiredCount, Status: status, XPReward: item.XPReward})
 	}
-	writeJSON(w, 200, result)
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (h *Handler) applyMockAction(w http.ResponseWriter, r *http.Request) {
 	var action taskmodel.Type
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64)).Decode(&action); err != nil {
-		writeError(w, 400, "validation_error", "request is invalid")
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 		return
 	}
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	if err := h.tasksService.ApplyAction(r.Context(), id, action); err != nil {
 		mapGameError(w, err)
 		return
 	}
-	writeJSON(w, 200, map[string]string{"status": "applied"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "applied"})
 }

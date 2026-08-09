@@ -11,13 +11,13 @@ type summaryResponse struct {
 	Level          int      `json:"level"`
 	CurrentXP      int      `json:"currentXP"`
 	Energy         int      `json:"energy"`
-	UnlockedReward []string `json:"unlockedRewards"`
+	UnlockedRewards []string `json:"unlockedRewards"`
 }
 
 func (h *Handler) getTodaySummary(w http.ResponseWriter, r *http.Request) {
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	item, err := h.summaryService.GetToday(r.Context(), id)
@@ -25,5 +25,17 @@ func (h *Handler) getTodaySummary(w http.ResponseWriter, r *http.Request) {
 		mapGameError(w, err)
 		return
 	}
-	writeJSON(w, 200, summaryResponse{XPEarned: item.XPEarned, CompletedTasks: item.CompletedTasks, Charges: item.Charges, Level: item.Level, CurrentXP: item.CurrentXP, Energy: item.Energy, UnlockedReward: item.UnlockedRewards})
+	unlocked := item.UnlockedRewards
+	if unlocked == nil {
+		unlocked = []string{}
+	}
+	writeJSON(w, http.StatusOK, summaryResponse{
+		XPEarned:       item.XPEarned,
+		CompletedTasks: item.CompletedTasks,
+		Charges:        item.Charges,
+		Level:          item.Level,
+		CurrentXP:      item.CurrentXP,
+		Energy:         item.Energy,
+		UnlockedRewards: unlocked,
+	})
 }
