@@ -1,1 +1,6 @@
 @import './styles/variables.css';
+
+html { background: var(--color-bg); }
+body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--color-text-primary); background: var(--color-bg); }
+button, input { font-family: inherit; }
+* { box-sizing: border-box; }

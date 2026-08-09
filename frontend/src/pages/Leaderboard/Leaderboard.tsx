@@ -1,68 +1,61 @@
-import './Leaderboard.css';
+import { useCallback, useEffect, useState } from 'react'
+import './Leaderboard.css'
+import { api } from '../../api/client'
+import type { Leaderboard as LeaderboardData } from '../../api/types'
+import { useAuth } from '../../auth/AuthContext'
+import { useGameEvent } from '../../realtime/RealtimeContext'
 
-const players = [
-  { place: 1, name: 'Александр К.', xp: 12450 },
-  { place: 2, name: 'Елена М.', xp: 11200 },
-  { place: 3, name: 'Дмитрий С.', xp: 10850 },
-  { place: 4, name: 'Анна В.', xp: 9800 },
-  { place: 5, name: 'Иван Иванов', xp: 9300},
-  { place: 6, name: 'Сергей П.', xp: 8900 },
-  { place: 7, name: 'Ольга Н.', xp: 8450 },
-  { place: 8, name: 'Максим Р.', xp: 7900 },
-  { place: 9, name: 'Екатерина Л.', xp: 7200 },
-  { place: 10, name: 'Алексей Д.', xp: 6800 },
-];
+export default function Leaderboard() {
+  const { user } = useAuth()
+  const event = useGameEvent()
+  const [data, setData] = useState<LeaderboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-const Leaderboard = () => {
+  const load = useCallback(async () => {
+    try {
+      setData(await api.getLeaderboard())
+      setError(null)
+    } catch {
+      setError('Не удалось загрузить лидерборд.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load() }, 0)
+    return () => window.clearTimeout(timer)
+  }, [load])
+  useEffect(() => {
+    if (event?.name !== 'pet_updated') return
+    const timer = window.setTimeout(() => { void load() }, 0)
+    return () => window.clearTimeout(timer)
+  }, [event, load])
+
+  if (loading) return <div className="leaderboard__page"><div className="page-state">Загружаем лидерборд…</div></div>
+
   return (
     <div className="leaderboard__page">
-        <div className="leaderboard__container">
-            <div className="leaderboard__info">
-                <h1 className="leaderboard__title">Лидерборд</h1>
-                <p className="leaderboard__description">Топ игроков по опыту</p>
-            </div>
-            <div className="leaderboard-wrapper">
-                <table className="leaderboard">
-                    <colgroup>
-                        <col className="leaderboard__col leaderboard__col--place" />
-                        <col className="leaderboard__col leaderboard__col--player" />
-                        <col className="leaderboard__col leaderboard__col--xp" />
-                    </colgroup>
-                    <thead className="leaderboard__head">
-                        <tr className="leaderboard__row leaderboard__row--header">
-                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--place">Место</th>
-                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--player">Игрок</th>
-                        <th className="leaderboard__cell leaderboard__cell--header leaderboard__cell--xp">Опыт(XP)</th>
-                        </tr>
-                    </thead>
-
-                    <tbody className="leaderboard__body">
-                        {players.map((player) => (
-                        <tr key={player.place} className={player.place === 5 ? "leaderboard__row--your-result" : "leaderboard__row"}>
-                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--place">{player.place}</td>
-                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--player">{player.name}</td>
-                            <td className="leaderboard__cell leaderboard__cell--body leaderboard__cell--xp">{player.xp}</td>
-                        </tr>
-                        ))}
-                    </tbody>
-
-                    <tfoot className="leaderboard__foot">
-                        <tr className="leaderboard__row leaderboard__row--footer">
-                        <td colSpan={3} className="leaderboard__cell leaderboard__cell--footer">
-                            <div className="leaderboard__footer-content">
-                                <span className="leaderboard__info">Ваше место: 5 из 42</span>
-                                <button className="leaderboard__button leaderboard__button--share">
-                                    Поделиться
-                                </button>
-                            </div>
-                        </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
+      <div className="leaderboard__container">
+        <header className="leaderboard__info"><h1 className="leaderboard__title">Лидерборд</h1><p className="leaderboard__description">Топ-10 игроков по общему опыту</p></header>
+        {error && <p className="leaderboard__error" role="alert">{error}</p>}
+        {data && (
+          <div className="leaderboard-wrapper">
+            <table className="leaderboard">
+              <thead><tr><th>Место</th><th>Игрок</th><th>Уровень</th><th>Опыт (XP)</th></tr></thead>
+              <tbody>
+                {data.entries.map((player) => (
+                  <tr key={player.userId} className={player.userId === user?.id ? 'leaderboard__row--your-result' : ''}>
+                    <td>{player.rank}</td><td>{player.displayName}</td><td>{player.level}</td><td>{player.xp.toLocaleString('ru-RU')}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot><tr><td colSpan={4}>Ваше место: {data.currentUser?.rank ?? 'ещё не определено'} · {data.currentUser?.xp ?? 0} XP</td></tr></tfoot>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  );
-};
-
-export default Leaderboard;
+  )
+}

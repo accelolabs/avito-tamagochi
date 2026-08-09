@@ -1,0 +1,19 @@
+.app-state,
+.page-state {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 32px;
+}
+
+.page-state--error {
+  color: var(--color-default-hover);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
