@@ -8,9 +8,9 @@ const displayNamePattern = /^[A-Za-z_-]+$/
 
 function errorMessage(error: unknown) {
   if (error instanceof ApiError) {
-    if (error.code === 'email_already_exists') return 'Этот email уже зарегистрирован.'
-    if (error.code === 'invalid_credentials') return 'Неверный email или пароль.'
-    if (error.code === 'validation_error') return 'Проверьте введённые данные.'
+    if (error.code === 'email_already_exists') {return 'Этот email уже зарегистрирован.'}
+    if (error.code === 'invalid_credentials') {return 'Неверный email или пароль.'}
+    if (error.code === 'validation_error') {return 'Проверьте введённые данные.'}
   }
   return 'Не удалось выполнить запрос. Попробуйте ещё раз.'
 }
@@ -68,7 +68,7 @@ function RegistrationForm({ switchToLogin }: { switchToLogin: () => void }) {
     setSubmitting(true)
     try {
       await register({ displayName, email, password })
-      navigate('/', { replace: true })
+      void navigate('/', { replace: true })
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {
@@ -78,7 +78,7 @@ function RegistrationForm({ switchToLogin }: { switchToLogin: () => void }) {
 
   return (
     <div className="auth__form-container">
-      <form className="auth__form" onSubmit={submit}>
+      <form className="auth__form" onSubmit={(event) => { void submit(event) }}>
         <AuthField label="Имя пользователя" type="text" value={displayName} onChange={setDisplayName} placeholder="Avito_User" autoComplete="username" />
         <AuthField label="Электронная почта" type="email" value={email} onChange={setEmail} placeholder="mail@example.ru" autoComplete="email" />
         <AuthField label="Пароль" type="password" value={password} onChange={setPassword} placeholder="Не менее 8 символов" autoComplete="new-password" minLength={8} maxLength={128} />
@@ -106,7 +106,7 @@ function LoginForm({ switchToRegistration }: { switchToRegistration: () => void 
     setSubmitting(true)
     try {
       await login({ email, password })
-      navigate('/', { replace: true })
+      void navigate('/', { replace: true })
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {
@@ -116,7 +116,7 @@ function LoginForm({ switchToRegistration }: { switchToRegistration: () => void 
 
   return (
     <div className="auth__form-container">
-      <form className="auth__form" onSubmit={submit}>
+      <form className="auth__form" onSubmit={(event) => { void submit(event) }}>
         <AuthField label="Электронная почта" type="email" value={email} onChange={setEmail} placeholder="mail@example.ru" autoComplete="email" />
         <AuthField label="Пароль" type="password" value={password} onChange={setPassword} placeholder="Ваш пароль" autoComplete="current-password" minLength={8} maxLength={128} />
         {error && <p className="auth__error" role="alert">{error}</p>}

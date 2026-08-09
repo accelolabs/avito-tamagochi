@@ -32,7 +32,7 @@ export default function Rewards() {
     return () => window.clearTimeout(timer)
   }, [load])
   useEffect(() => {
-    if (event?.name !== 'rewards_updated') return
+    if (event?.name !== 'rewards_updated') {return}
     const timer = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timer)
   }, [event, load])
@@ -49,7 +49,7 @@ export default function Rewards() {
     }
   }
 
-  if (loading) return <div className="rewards-page"><div className="page-state">Загружаем награды…</div></div>
+  if (loading) {return <div className="rewards-page"><div className="page-state">Загружаем награды…</div></div>}
 
   return (
     <div className="rewards-page">
@@ -58,7 +58,7 @@ export default function Rewards() {
         {error && <p className="rewards__error" role="alert">{error}</p>}
         <div className="rewards__list">
           {rewards.length === 0 && !error && <div className="rewards__empty">Первая награда откроется на втором уровне.</div>}
-          {rewards.map((reward) => <RewardCard key={reward.id} reward={reward} pending={pending === reward.id} onUse={() => redeemReward(reward)} />)}
+          {rewards.map((reward) => <RewardCard key={reward.id} reward={reward} pending={pending === reward.id} onUse={() => { void redeemReward(reward) }} />)}
         </div>
       </div>
     </div>

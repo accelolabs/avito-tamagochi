@@ -7,7 +7,7 @@ info:
 
 servers:
   - url: /api/v1
-    description: HTTP API through Nginx
+    description: HTTP API through Caddy
 
 security:
   - sessionCookie: []
@@ -109,7 +109,7 @@ paths:
         send an initial snapshot.
       servers:
         - url: /
-          description: WebSocket endpoint through Nginx
+          description: WebSocket endpoint through Caddy
       x-websocket-messages:
         $ref: "#/components/schemas/WSEvent"
       responses:
@@ -130,6 +130,9 @@ paths:
     post:
       operationId: chargePet
       summary: Charge the pet
+      description: >-
+        The first charge in a Moscow calendar day restores energy to 100 and
+        grants 10 XP. Later calls on the same day return the unchanged pet.
       requestBody:
         required: true
         content:
@@ -157,7 +160,12 @@ paths:
           application/json: { schema: { type: string, enum: [view, favorite, create_listing, create_listing_in_category] } }
       responses:
         "200": { description: Action accepted, content: { application/json: { schema: { $ref: "#/components/schemas/ActionResult" } } } }
-        "400": { $ref: "#/components/responses/ValidationError" }
+        "400":
+          description: The action is invalid or is not available today.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401": { $ref: "#/components/responses/UnauthorizedError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards:
@@ -291,6 +299,7 @@ components:
       properties:
         event:
           type: string
+          enum: [pet_updated, tasks_updated, rewards_updated]
           description: Event name published by the backend.
 
     Pet:
@@ -298,8 +307,8 @@ components:
       additionalProperties: false
       required: [xp, level, stage, energy, lastChargedAt]
       properties:
-        xp: { type: integer }
-        level: { type: integer }
+        xp: { type: integer, minimum: 0 }
+        level: { type: integer, minimum: 1 }
         stage: { type: string, enum: [egg, child, teen, adult] }
         energy: { type: integer, minimum: 0, maximum: 100 }
         lastChargedAt: { type: string, format: date-time }
@@ -349,13 +358,13 @@ components:
       additionalProperties: false
       required: [xpEarned, completedTasks, charges, level, currentXP, energy, unlockedRewards]
       properties:
-        xpEarned: { type: integer }
-        completedTasks: { type: integer }
-        charges: { type: integer }
-        level: { type: integer }
-        currentXP: { type: integer }
-        energy: { type: integer }
-        unlockedRewards: { type: array, items: { type: string } }
+        xpEarned: { type: integer, minimum: 0 }
+        completedTasks: { type: integer, minimum: 0 }
+        charges: { type: integer, minimum: 0 }
+        level: { type: integer, minimum: 1 }
+        currentXP: { type: integer, minimum: 0 }
+        energy: { type: integer, minimum: 0, maximum: 100 }
+        unlockedRewards: { type: array, items: { type: string, enum: [promotion, free_delivery] } }
     Leaderboard:
       type: object
       additionalProperties: false
