@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 	petservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/service"
+	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
 	"github.com/google/uuid"
 )
 
@@ -17,6 +19,22 @@ type fakeGameService struct{}
 
 func (fakeGameService) GetPet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {
 	return &petmodel.Stats{XP: 100, Level: 2, Stage: petmodel.Egg, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()}, nil
+}
+
+func TestAvailableRewardSerializesUsedAtAsNull(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, toRewardResponse(rewardmodel.UserReward{
+		ID: uuid.New(), Level: 2, RewardType: rewardmodel.Promotion, Status: "available", UnlockedAt: time.Unix(10, 0).UTC(),
+	}))
+
+	var payload map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	usedAt, exists := payload["usedAt"]
+	if !exists || usedAt != nil {
+		t.Fatalf("usedAt = %#v, exists = %v; want null field", usedAt, exists)
+	}
 }
 
 func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {

@@ -14,7 +14,7 @@ type rewardResponse struct {
 	Type       rewardmodel.Type `json:"type"`
 	Status     string           `json:"status"`
 	UnlockedAt time.Time        `json:"unlockedAt"`
-	UsedAt     *time.Time       `json:"usedAt,omitempty"`
+	UsedAt     *time.Time       `json:"usedAt"`
 }
 
 type rewardsResponse struct {
@@ -34,7 +34,7 @@ func (h *Handler) getRewards(w http.ResponseWriter, r *http.Request) {
 	}
 	result := rewardsResponse{Rewards: make([]rewardResponse, 0, len(items))}
 	for _, item := range items {
-		result.Rewards = append(result.Rewards, rewardResponse{ID: item.ID, Level: item.Level, Type: item.RewardType, Status: item.Status, UnlockedAt: item.UnlockedAt, UsedAt: item.UsedAt})
+		result.Rewards = append(result.Rewards, toRewardResponse(item))
 	}
 	writeJSON(w, 200, result)
 }
@@ -55,5 +55,9 @@ func (h *Handler) useReward(w http.ResponseWriter, r *http.Request) {
 		mapGameError(w, err)
 		return
 	}
-	writeJSON(w, 200, rewardResponse{ID: item.ID, Level: item.Level, Type: item.RewardType, Status: item.Status, UnlockedAt: item.UnlockedAt, UsedAt: item.UsedAt})
+	writeJSON(w, 200, toRewardResponse(*item))
+}
+
+func toRewardResponse(item rewardmodel.UserReward) rewardResponse {
+	return rewardResponse{ID: item.ID, Level: item.Level, Type: item.RewardType, Status: item.Status, UnlockedAt: item.UnlockedAt, UsedAt: item.UsedAt}
 }

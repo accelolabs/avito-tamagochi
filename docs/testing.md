@@ -31,21 +31,3 @@ cd frontend && npm run lint && npm run build
 ```
 
 Публичный API должен быть описан в `api/openapi.yaml` и `docs/game-api.md`.
-
-## Live-проверка backend без frontend
-
-Для проверки REST и WebSocket backend можно использовать изолированный Compose-проект:
-
-```bash
-scripts/live_backend.sh --all
-```
-
-Скрипт поднимает только `postgres`, `migrate` и `backend`, использует отдельный volume `avito-tamagotchi_live_data`, регистрирует тестовых пользователей и проверяет auth, питомца, mock Avito actions, задания, XP, уровни, награды, summary, leaderboard, конкурентную зарядку и WebSocket-события.
-
-Frontend не запускается. Для остановки stack и удаления только live-volume:
-
-```bash
-scripts/live_backend.sh --no-start --all --stop
-```
-
-Скрипт требует `docker`, `curl`, `python3` и использует встроенный Go WebSocket listener из `backend/cmd/live-ws-listener`.

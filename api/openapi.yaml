@@ -125,6 +125,7 @@ paths:
       responses:
         "200": { description: Pet stats, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
         "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /pet/actions:
     post:
       operationId: chargePet
@@ -136,12 +137,16 @@ paths:
       responses:
         "200": { description: Updated pet, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
         "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /tasks/today:
     get:
       operationId: getTodayTasks
       summary: Get today's rotated tasks
       responses:
         "200": { description: Tasks, content: { application/json: { schema: { $ref: "#/components/schemas/Tasks" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /mock-avito/actions:
     post:
       operationId: applyMockAvitoAction
@@ -151,35 +156,46 @@ paths:
         content:
           application/json: { schema: { type: string, enum: [view, favorite, create_listing, create_listing_in_category] } }
       responses:
-        "200": { description: Action accepted }
+        "200": { description: Action accepted, content: { application/json: { schema: { $ref: "#/components/schemas/ActionResult" } } } }
         "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards:
     get:
       operationId: getRewards
       summary: Get unlocked rewards
       responses:
         "200": { description: Rewards, content: { application/json: { schema: { $ref: "#/components/schemas/Rewards" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards/{rewardID}/use:
     post:
       operationId: useReward
       summary: Use an unlocked reward
       parameters: [{ name: rewardID, in: path, required: true, schema: { type: string, format: uuid } }]
       responses:
-        "200": { description: Used reward }
-        "404": { description: Reward not found }
-        "409": { description: Reward already used }
+        "200": { description: Used reward, content: { application/json: { schema: { $ref: "#/components/schemas/Reward" } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "404": { $ref: "#/components/responses/RewardNotFoundError" }
+        "409": { $ref: "#/components/responses/RewardAlreadyUsedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /summary/today:
     get:
       operationId: getTodaySummary
       summary: Get today's Moscow-time summary
       responses:
         "200": { description: Daily summary, content: { application/json: { schema: { $ref: "#/components/schemas/Summary" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /leaderboard:
     get:
       operationId: getLeaderboard
       summary: Get the top ten and current user's rank
       responses:
         "200": { description: Leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/Leaderboard" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
 
 components:
   securitySchemes:
@@ -279,6 +295,7 @@ components:
 
     Pet:
       type: object
+      additionalProperties: false
       required: [xp, level, stage, energy, lastChargedAt]
       properties:
         xp: { type: integer }
@@ -288,33 +305,49 @@ components:
         lastChargedAt: { type: string, format: date-time }
     Tasks:
       type: object
+      additionalProperties: false
+      required: [tasks]
       properties:
         tasks: { type: array, items: { $ref: "#/components/schemas/Task" } }
     Task:
       type: object
+      additionalProperties: false
+      required: [type, progress, requiredCount, status, xpReward]
       properties:
-        type: { type: string }
-        progress: { type: integer }
-        requiredCount: { type: integer }
+        type: { type: string, enum: [view, favorite, create_listing, create_listing_in_category] }
+        progress: { type: integer, minimum: 0 }
+        requiredCount: { type: integer, minimum: 1 }
         status: { type: string, enum: [in_progress, completed] }
-        xpReward: { type: integer }
+        xpReward: { type: integer, minimum: 1 }
+    ActionResult:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, enum: [applied] }
     Rewards:
       type: object
+      additionalProperties: false
+      required: [rewards]
       properties:
         rewards:
           type: array
-          items:
-            type: object
-            required: [id, level, type, status, unlockedAt]
-            properties:
-              id: { type: string, format: uuid }
-              level: { type: integer, minimum: 2 }
-              type: { type: string, enum: [promotion, free_delivery] }
-              status: { type: string, enum: [available, used] }
-              unlockedAt: { type: string, format: date-time }
-              usedAt: { type: string, format: date-time, nullable: true }
+          items: { $ref: "#/components/schemas/Reward" }
+    Reward:
+      type: object
+      additionalProperties: false
+      required: [id, level, type, status, unlockedAt, usedAt]
+      properties:
+        id: { type: string, format: uuid }
+        level: { type: integer, minimum: 2 }
+        type: { type: string, enum: [promotion, free_delivery] }
+        status: { type: string, enum: [available, used] }
+        unlockedAt: { type: string, format: date-time }
+        usedAt: { type: string, format: date-time, nullable: true }
     Summary:
       type: object
+      additionalProperties: false
+      required: [xpEarned, completedTasks, charges, level, currentXP, energy, unlockedRewards]
       properties:
         xpEarned: { type: integer }
         completedTasks: { type: integer }
@@ -325,9 +358,24 @@ components:
         unlockedRewards: { type: array, items: { type: string } }
     Leaderboard:
       type: object
+      additionalProperties: false
+      required: [entries, currentUser]
       properties:
-        entries: { type: array, items: { type: object } }
-        currentUser: { type: object, nullable: true }
+        entries: { type: array, maxItems: 10, items: { $ref: "#/components/schemas/LeaderboardEntry" } }
+        currentUser:
+          allOf:
+            - $ref: "#/components/schemas/LeaderboardEntry"
+          nullable: true
+    LeaderboardEntry:
+      type: object
+      additionalProperties: false
+      required: [rank, userId, displayName, xp, level]
+      properties:
+        rank: { type: integer, minimum: 1 }
+        userId: { type: string, format: uuid }
+        displayName: { type: string }
+        xp: { type: integer, minimum: 0 }
+        level: { type: integer, minimum: 1 }
 
     ErrorResponse:
       type: object
@@ -343,6 +391,9 @@ components:
             - unauthorized
             - invalid_credentials
             - email_already_exists
+            - task_not_available
+            - reward_not_found
+            - reward_already_used
             - internal_error
         message:
           type: string
@@ -371,6 +422,20 @@ components:
 
     EmailAlreadyExistsError:
       description: The normalized email is already registered.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    RewardNotFoundError:
+      description: The reward does not exist or belongs to another user.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    RewardAlreadyUsedError:
+      description: The reward has already been used.
       content:
         application/json:
           schema:

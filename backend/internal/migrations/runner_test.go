@@ -53,3 +53,18 @@ func TestGameCatalogMigrationHasRotationsAndRewards(t *testing.T) {
 		if !strings.Contains(sql, marker) { t.Fatalf("game catalog migration does not contain %q", marker) }
 	}
 }
+
+func TestTaskProgressBoundsMigrationHasDatabaseConstraint(t *testing.T) {
+	path := filepath.Join("..", "..", "migrations", "0004_task_progress_bounds.sql")
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read task progress bounds migration: %v", err)
+	}
+
+	sql := string(contents)
+	for _, marker := range []string{"-- +goose Up", "ADD CONSTRAINT task_progress_required_count_check", "progress <= 5", "progress <= 1", "-- +goose Down"} {
+		if !strings.Contains(sql, marker) {
+			t.Fatalf("task progress bounds migration does not contain %q", marker)
+		}
+	}
+}
