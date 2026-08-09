@@ -14,7 +14,7 @@ type PostgreSQLRepository struct{ db *sql.DB }
 func New(db *sql.DB) *PostgreSQLRepository { return &PostgreSQLRepository{db: db} }
 
 func (r *PostgreSQLRepository) GetToday(ctx context.Context, userID uuid.UUID, localDate, now time.Time) (*summarymodel.DailySummary, error) {
-	value := &summarymodel.DailySummary{LocalDate: localDate}
+	value := &summarymodel.DailySummary{LocalDate: localDate, UnlockedRewards: make([]string, 0)}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT COALESCE(SUM(xp.amount), 0),
 		       COUNT(*) FILTER (WHERE xp.source = 'task'),
@@ -23,7 +23,7 @@ func (r *PostgreSQLRepository) GetToday(ctx context.Context, userID uuid.UUID, l
 		       CASE WHEN p.id IS NULL THEN 0 ELSE 100 - LEAST(100, GREATEST(0, FLOOR(EXTRACT(EPOCH FROM ($3 - p.last_charged_at)) / 1728)))::int END
 		FROM users u
 		LEFT JOIN pets p ON p.user_id = u.id
-		LEFT JOIN xp_events xp ON xp.user_id = p.user_id AND xp.local_date = $2
+		LEFT JOIN xp_events xp ON xp.user_id = u.id AND xp.local_date = $2
 		WHERE u.id = $1
 		GROUP BY p.id, p.xp, p.last_charged_at`, userID, localDate.Format("2006-01-02"), now).Scan(&value.XPEarned, &value.CompletedTasks, &value.Charges, &value.CurrentXP, &value.Level, &value.Energy)
 	if err != nil {

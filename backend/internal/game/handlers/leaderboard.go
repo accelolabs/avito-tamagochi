@@ -17,13 +17,13 @@ type leaderboardEntryResponse struct {
 
 type leaderboardResponse struct {
 	Entries     []leaderboardEntryResponse `json:"entries"`
-	CurrentUser *leaderboardEntryResponse  `json:"currentUser,omitempty"`
+	CurrentUser *leaderboardEntryResponse  `json:"currentUser"`
 }
 
 func (h *Handler) getLeaderboard(w http.ResponseWriter, r *http.Request) {
 	id, ok := currentUserID(r)
 	if !ok {
-		writeError(w, 401, "unauthorized", "authentication is required")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
 	items, err := h.leaderboardService.GetTop(r.Context())
@@ -40,7 +40,7 @@ func (h *Handler) getLeaderboard(w http.ResponseWriter, r *http.Request) {
 	for i := range items {
 		result.Entries = append(result.Entries, *toLeaderboardResponse(&items[i]))
 	}
-	writeJSON(w, 200, result)
+	writeJSON(w, http.StatusOK, result)
 }
 
 func toLeaderboardResponse(value *leadermodel.Entry) *leaderboardEntryResponse {

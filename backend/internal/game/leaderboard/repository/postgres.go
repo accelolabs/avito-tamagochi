@@ -47,6 +47,9 @@ func (r *PostgreSQLRepository) GetUserRank(ctx context.Context, userID uuid.UUID
 		)
 		SELECT rank, id, display_name, xp, level FROM ranked WHERE id = $1
 	`, userID).Scan(&value.Rank, &value.UserID, &value.DisplayName, &value.XP, &value.Level)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -72,3 +72,40 @@ func TestTaskEndpointRequiresAuthentication(t *testing.T) {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
 	}
 }
+
+func TestLeaderboardSerializesCurrentUserAsNull(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, leaderboardResponse{
+		Entries:     []leaderboardEntryResponse{},
+		CurrentUser: nil,
+	})
+
+	var payload map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	currentUser, exists := payload["currentUser"]
+	if !exists || currentUser != nil {
+		t.Fatalf("currentUser = %#v, exists = %v; want null field present in JSON", currentUser, exists)
+	}
+}
+
+func TestSummarySerializesEmptyUnlockedRewardsAsArray(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, summaryResponse{
+		UnlockedRewards: []string{},
+	})
+
+	var payload map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	unlocked, exists := payload["unlockedRewards"]
+	if !exists {
+		t.Fatalf("unlockedRewards key missing from JSON")
+	}
+	slice, ok := unlocked.([]any)
+	if !ok || slice == nil {
+		t.Fatalf("unlockedRewards = %#v; want empty JSON array", unlocked)
+	}
+}

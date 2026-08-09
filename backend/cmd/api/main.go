@@ -65,7 +65,6 @@ func main() {
 	mux := http.NewServeMux()
 	authHandler.SetRoutes(mux)
 	gameHandler.SetRoutes(mux)
-	mux.Handle("GET /api/v1/auth/me", middleware.RequireSession(authService, http.HandlerFunc(authHandler.Me)))
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
 	log.Printf("server started on http://localhost:%s", port)

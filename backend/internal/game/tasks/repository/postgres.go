@@ -17,19 +17,19 @@ func New(db *sql.DB) *PostgreSQLRepository { return &PostgreSQLRepository{db: db
 func (r *PostgreSQLRepository) GetTodayProgress(ctx context.Context, userID uuid.UUID, localDate time.Time) ([]taskmodel.Progress, error) {
 	date := localDate.Format("2006-01-02")
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT $2, $1, r.task_type, d.title, d.xp_reward,
+		SELECT $1, $2, r.task_type, d.title, d.xp_reward,
 		       COALESCE(p.progress, 0), d.required_count, p.completed_at
 		FROM task_rotation r
 		JOIN task_definitions d ON d.type = r.task_type
-		LEFT JOIN task_progress p ON p.task_type = r.task_type AND p.user_id = $2 AND p.local_date = $1
-		WHERE r.cycle_day = ((($1::date - DATE '1970-01-01') % 3) + 1)
-	ORDER BY r.task_type`, date, userID)
+		LEFT JOIN task_progress p ON p.task_type = r.task_type AND p.user_id = $1 AND p.local_date = $2
+		WHERE r.cycle_day = ((($2::date - DATE '1970-01-01') % 3) + 1)
+		ORDER BY r.task_type`, userID, date)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var result []taskmodel.Progress
+	result := make([]taskmodel.Progress, 0)
 	for rows.Next() {
 		value, err := scanProgress(rows)
 		if err != nil {
