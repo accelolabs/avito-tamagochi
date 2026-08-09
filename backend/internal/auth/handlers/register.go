@@ -19,7 +19,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	}
 	user, session, err := h.service.Register(r.Context(), model.RegisterInput{Email: request.Email, Password: request.Password, DisplayName: request.DisplayName})
 	if err != nil {
-		mapServiceError(w, err, false)
+		mapServiceError(w, err)
 		return
 	}
 	h.setSessionCookie(w, session)

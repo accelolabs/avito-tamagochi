@@ -8,6 +8,7 @@ import (
 	"time"
 
 	autherrors "github.com/accelolabs/avito-tamagochi/backend/internal/auth/errors"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 	authservice "github.com/accelolabs/avito-tamagochi/backend/internal/auth/service"
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ func (h *Handler) SetRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/auth/register", h.register)
 	mux.HandleFunc("POST /api/v1/auth/login", h.login)
 	mux.HandleFunc("POST /api/v1/auth/logout", h.logout)
+	mux.Handle("GET /api/v1/auth/me", middleware.RequireSession(h.service, http.HandlerFunc(h.Me)))
 }
 
 type userResponse struct {
@@ -83,7 +85,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 	return true
 }
 
-func mapServiceError(w http.ResponseWriter, err error, _ bool) {
+func mapServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, autherrors.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")

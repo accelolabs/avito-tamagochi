@@ -18,7 +18,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	user, session, err := h.service.Login(r.Context(), model.LoginInput{Email: request.Email, Password: request.Password})
 	if err != nil {
-		mapServiceError(w, err, true)
+		mapServiceError(w, err)
 		return
 	}
 	h.setSessionCookie(w, session)
