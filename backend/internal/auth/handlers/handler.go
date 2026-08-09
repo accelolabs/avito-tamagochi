@@ -87,6 +87,22 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 	return true
 }
 
+func decodeStringObject(data []byte, expectedKeys ...string) (map[string]string, error) {
+	var values map[string]string
+	if err := json.Unmarshal(data, &values); err != nil {
+		return nil, err
+	}
+	if len(values) != len(expectedKeys) {
+		return nil, errors.New("unexpected JSON fields")
+	}
+	for _, key := range expectedKeys {
+		if _, ok := values[key]; !ok {
+			return nil, errors.New("required JSON field is missing")
+		}
+	}
+	return values, nil
+}
+
 func mapServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, autherrors.ErrInvalidInput):

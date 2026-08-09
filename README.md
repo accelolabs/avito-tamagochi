@@ -51,12 +51,12 @@ DNS должен указывать на сервер. Откройте TCP `80`
 
 ```bash
 cd backend && go test ./...
-cd backend && golangci-lint run ./...
+cd backend && golangci-lint run --config ../.golangci.yml ./...
 cd frontend && npm run lint && npm run build
 docker compose config --quiet
 ```
 
-PostgreSQL integration-тесты запускаются отдельно: [docs/testing.md](docs/testing.md). Конфигурация backend-линтера находится в `.golangci.yml`.
+CI использует `golangci-lint` версии `v2.10.1`. PostgreSQL integration-тесты запускаются отдельно: [docs/testing.md](docs/testing.md).
 
 ## Ограничения MVP
 
