@@ -76,7 +76,7 @@ export default function Dashboard() {
     }
   }
 
-  if (loading) {return <div className="dashboard-page"><div className="page-state">Загружаем питомца…</div></div>}
+  if (loading) {return <div className="dashboard-page"><div className="page-state">Загружаем питомца...</div></div>}
   if (!pet || !summary) {return <div className="dashboard-page"><div className="page-state page-state--error">{error ?? 'Данные питомца недоступны.'}</div></div>}
 
   return (
@@ -86,13 +86,13 @@ export default function Dashboard() {
         <section className="dashboard__pet-card">
           <div className="dashboard__pet-image"><PetVisual stage={pet.stage} /></div>
           <div className="dashboard__pet-name">K1-T4</div>
-          <div className="dashboard__pet-phase">{stageLabel(pet.stage)} · уровень {pet.level}</div>
+          <div className="dashboard__pet-phase">{stageLabel(pet.stage)}, уровень {pet.level}</div>
           <div className="dashboard__progress-bars">
             <Progress label="XP до следующего уровня" value={`${levelProgress} / 100`} percent={levelProgress} kind="xp" />
             <Progress label="Батарея" value={`${energy}%`} percent={energy} kind="battery" />
           </div>
           <button className="dashboard__charge" type="button" disabled={charging} onClick={() => { void charge() }}>
-            <span aria-hidden="true">⚡</span>{charging ? 'Заряжаем…' : 'Зарядить'}
+            {charging ? 'Заряжаем...' : 'Зарядить'}
           </button>
         </section>
 
@@ -100,7 +100,7 @@ export default function Dashboard() {
           <Stat title="Выполнено заданий" value={`${summary.completedTasks} / 3`} accent="purple" />
           <Stat title="Заработано сегодня" value={`${summary.xpEarned} XP`} accent="blue" />
           <Stat title="Доступно наград" value={String(availableRewards)} accent="green" />
-          <Stat title="Место в лидерборде" value={leaderboard?.currentUser ? String(leaderboard.currentUser.rank) : '—'} accent="pink" />
+          <Stat title="Место в лидерборде" value={leaderboard?.currentUser ? String(leaderboard.currentUser.rank) : 'Нет данных'} accent="pink" />
         </section>
       </div>
     </div>

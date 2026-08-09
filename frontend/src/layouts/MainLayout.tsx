@@ -5,10 +5,10 @@ import { useAuth } from '../auth/AuthContext'
 import { RealtimeProvider } from '../realtime/RealtimeContext'
 
 const navigation = [
-  { to: '/', label: 'Питомец', icon: '🐾', end: true },
-  { to: '/tasks', label: 'Задания', icon: '✓' },
-  { to: '/rewards', label: 'Награды', icon: '★' },
-  { to: '/leaderboard', label: 'Лидерборд', icon: '▥' },
+  { to: '/', label: 'Питомец', icon: '/pet.svg', end: true },
+  { to: '/tasks', label: 'Задания', icon: '/task.svg' },
+  { to: '/rewards', label: 'Награды', icon: '/reward.svg' },
+  { to: '/leaderboard', label: 'Лидерборд', icon: '/leaderboard.svg' },
 ]
 
 function Sidebar() {
@@ -44,7 +44,11 @@ function Sidebar() {
             end={item.end}
             className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
           >
-            <span className="sidebar__link-icon" aria-hidden="true">{item.icon}</span>
+            <span
+              className="sidebar__link-icon"
+              aria-hidden="true"
+              style={{ maskImage: `url(${item.icon})`, WebkitMaskImage: `url(${item.icon})` }}
+            />
             {item.label}
           </NavLink>
         ))}
@@ -52,8 +56,12 @@ function Sidebar() {
 
       <footer className="sidebar__footer">
         <button className="sidebar__exit" type="button" disabled={loggingOut} onClick={() => { void handleLogout() }}>
-          <span aria-hidden="true">↪</span>
-          {loggingOut ? 'Выходим…' : 'Выйти'}
+          <span
+            className="sidebar__exit-icon"
+            aria-hidden="true"
+            style={{ maskImage: 'url(/logout.svg)', WebkitMaskImage: 'url(/logout.svg)' }}
+          />
+          {loggingOut ? 'Выходим...' : 'Выйти'}
         </button>
       </footer>
     </nav>

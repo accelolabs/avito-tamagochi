@@ -11,13 +11,13 @@ import { AuthProvider, useAuth } from './auth/AuthContext'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) {return <div className="app-state">Загрузка…</div>}
+  if (loading) {return <div className="app-state">Загрузка...</div>}
   return user ? children : <Navigate to="/auth" replace />
 }
 
 function GuestRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) {return <div className="app-state">Загрузка…</div>}
+  if (loading) {return <div className="app-state">Загрузка...</div>}
   return user ? <Navigate to="/" replace /> : children
 }
 

@@ -33,7 +33,7 @@ export default function Leaderboard() {
     return () => window.clearTimeout(timer)
   }, [event, load])
 
-  if (loading) {return <div className="leaderboard__page"><div className="page-state">Загружаем лидерборд…</div></div>}
+  if (loading) {return <div className="leaderboard__page"><div className="page-state">Загружаем лидерборд...</div></div>}
 
   return (
     <div className="leaderboard__page">
@@ -51,7 +51,7 @@ export default function Leaderboard() {
                   </tr>
                 ))}
               </tbody>
-              <tfoot><tr><td colSpan={4}>Ваше место: {data.currentUser?.rank ?? 'ещё не определено'} · {data.currentUser?.xp ?? 0} XP</td></tr></tfoot>
+              <tfoot><tr><td colSpan={4}>Ваше место: {data.currentUser?.rank ?? 'ещё не определено'}, {data.currentUser?.xp ?? 0} XP</td></tr></tfoot>
             </table>
           </div>
         )}
