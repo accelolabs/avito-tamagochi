@@ -1,0 +1,27 @@
+.dashboard-page { min-height: 100vh; padding-left: 256px; background: var(--color-bg); }
+.dashboard { padding: 32px; display: flex; flex-direction: column; gap: 20px; }
+.dashboard__error { margin: 0; padding: 12px; border-radius: 8px; background: #fff0f1; color: var(--color-default-hover); text-align: center; }
+.dashboard__pet-card { background: var(--color-bg-default); padding: 24px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 18px; box-shadow: 0 4px 30px rgba(0, 0, 0, .08); }
+.dashboard__pet-image { width: 256px; height: 256px; border-radius: 50%; overflow: hidden; }
+.dashboard__pet-name { font-size: 18px; color: var(--color-text-secondary); font-weight: 800; }
+.dashboard__pet-phase { padding: 6px 12px; background: var(--color-text-primary); color: var(--color-text-tetriary); border-radius: 6px; }
+.dashboard__progress-bars { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+.dashboard__progress { width: min(450px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 7px; }
+.dashboard__progress-info { display: flex; justify-content: space-between; gap: 20px; font-size: 14px; color: var(--color-text-secondary); font-weight: 600; }
+.dashboard__progress-bar { width: 100%; height: 12px; background: var(--color-progressbar-bg); border-radius: 6px; overflow: hidden; }
+.dashboard__progress-fill { height: 100%; border-radius: 6px; transition: width .4s ease; }
+.dashboard__progress-xp { background: var(--color-secondary); }
+.dashboard__progress-battery { background: var(--color-primary); }
+.dashboard__charge { padding: 14px 30px; background: var(--color-primary); border: 0; border-radius: 7px; color: white; display: flex; gap: 7px; font: inherit; font-weight: 700; }
+.dashboard__charge:hover:not(:disabled) { background: var(--color-primary-hover); cursor: pointer; }
+.dashboard__stats { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; }
+.dashboard__stat-card { min-height: 100px; border-radius: 12px; padding: 18px; color: white; display: flex; flex-direction: column; justify-content: space-between; }
+.dashboard__stat-card h2 { margin: 0; font-size: 12px; text-transform: uppercase; }
+.dashboard__stat-card p { margin: 0; font-size: 26px; font-weight: 800; }
+.dashboard__stat-card--purple { background: var(--color-secondary); }
+.dashboard__stat-card--blue { background: var(--color-primary); }
+.dashboard__stat-card--green { background: var(--color-tetriary); }
+.dashboard__stat-card--pink { background: var(--color-default-hover); }
+@media (max-width: 1000px) { .dashboard__stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { .dashboard-page { padding: 118px 0 0; } .dashboard { padding: 16px; } }
+@media (max-width: 500px) { .dashboard__stats { grid-template-columns: 1fr; } .dashboard__pet-image { width: 210px; height: 210px; } }

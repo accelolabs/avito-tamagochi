@@ -1,0 +1,23 @@
+.tasks-container { min-height: 100vh; padding-left: 256px; }
+.tasks { padding: 52px 7vw; display: flex; flex-direction: column; gap: 20px; }
+.tasks__content { display: flex; flex-direction: column; gap: 6px; }
+.tasks__header { margin: 0; font-size: 24px; font-weight: 800; }
+.tasks__description { margin: 0; color: var(--color-text-secondary); }
+.tasks__error { margin: 0; padding: 12px; border-radius: 8px; background: #fff0f1; color: var(--color-default-hover); }
+.tasks__stats { background: var(--color-bg-default); border-radius: 12px; box-shadow: 0 4px 30px rgba(0, 0, 0, .08); padding: 18px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.tasks__stats-title { margin: 0; font-size: 16px; }
+.tasks__progress { width: min(390px, 100%); display: flex; gap: 10px; align-items: center; }
+.tasks__progress-bar { height: 12px; flex: 1; border-radius: 6px; overflow: hidden; background: var(--color-progressbar-bg); }
+.tasks__progress-fill { background: var(--color-secondary); height: 100%; border-radius: 6px; transition: width .3s ease; }
+.tasks__progress-label { white-space: nowrap; font-size: 14px; color: var(--color-text-secondary); }
+.tasks__list { display: flex; flex-direction: column; gap: 13px; }
+.tasks__card-item { padding: 18px; border-radius: 12px; background: var(--color-bg-default); box-shadow: 0 4px 30px rgba(0, 0, 0, .08); display: flex; gap: 16px; align-items: center; }
+.tasks__card-item--completed { box-shadow: none; border: 1px solid var(--color-bg); }
+.tasks__card-icon { flex: 0 0 52px; height: 52px; display: grid; place-items: center; border-radius: 12px; background: var(--color-secondary-light); color: var(--color-secondary); font-weight: 900; }
+.tasks__card-info { flex: 1; }
+.tasks__card-title { margin: 0; font-size: 16px; }
+.tasks__card-description { margin: 3px 0; color: var(--color-text-secondary); font-size: 14px; }
+.tasks__card-progress { font-size: 13px; font-weight: 700; }
+.tasks__complete-button { border: 0; border-radius: 8px; padding: 10px 16px; background: var(--color-secondary); color: white; font: inherit; cursor: pointer; }
+.tasks__complete-button:hover:not(:disabled) { background: var(--color-secondary-hover); }
+@media (max-width: 760px) { .tasks-container { padding: 118px 0 0; } .tasks { padding: 24px 16px; } .tasks__stats { align-items: flex-start; flex-direction: column; } .tasks__card-item { align-items: flex-start; flex-wrap: wrap; } .tasks__complete-button { width: 100%; } }

@@ -1,0 +1,63 @@
+package handlers
+
+import (
+	"net/http"
+	"time"
+
+	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
+	"github.com/google/uuid"
+)
+
+type rewardResponse struct {
+	ID         uuid.UUID        `json:"id"`
+	Level      int              `json:"level"`
+	Type       rewardmodel.Type `json:"type"`
+	Status     string           `json:"status"`
+	UnlockedAt time.Time        `json:"unlockedAt"`
+	UsedAt     *time.Time       `json:"usedAt"`
+}
+
+type rewardsResponse struct {
+	Rewards []rewardResponse `json:"rewards"`
+}
+
+func (h *Handler) getRewards(w http.ResponseWriter, r *http.Request) {
+	id, ok := currentUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+		return
+	}
+	items, err := h.rewardsService.GetRewards(r.Context(), id)
+	if err != nil {
+		mapGameError(w, err)
+		return
+	}
+	result := rewardsResponse{Rewards: make([]rewardResponse, 0, len(items))}
+	for _, item := range items {
+		result.Rewards = append(result.Rewards, toRewardResponse(item))
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) useReward(w http.ResponseWriter, r *http.Request) {
+	id, ok := currentUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+		return
+	}
+	rewardID, err := uuid.Parse(r.PathValue("rewardID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+		return
+	}
+	item, err := h.rewardsService.UseReward(r.Context(), id, rewardID)
+	if err != nil {
+		mapGameError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, toRewardResponse(*item))
+}
+
+func toRewardResponse(item rewardmodel.UserReward) rewardResponse {
+	return rewardResponse{ID: item.ID, Level: item.Level, Type: item.RewardType, Status: item.Status, UnlockedAt: item.UnlockedAt, UsedAt: item.UsedAt}
+}

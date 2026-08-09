@@ -1,0 +1,47 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  # Keep the Avito-inspired baseline: correctness, security, imports and dead code.
+  default: standard
+  enable:
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+    - unparam
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+    rules:
+      # This follows the Avito baseline: these standard cleanup calls are safe to defer.
+      - linters:
+          - errcheck
+        text: "Error return value of .*\\.(Close|Rollback)"
+      # Values are bounded/local command arguments in this MVP.
+      - linters:
+          - gosec
+        text: "G706|G115"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

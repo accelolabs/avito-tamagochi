@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:18-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-tamagotchi}
       POSTGRES_USER: ${POSTGRES_USER:-tamagotchi}
@@ -16,33 +17,51 @@ services:
   backend:
     build:
       context: ./backend
+    restart: unless-stopped
     environment:
       APP_PORT: "8080"
+      APP_SECURE_COOKIES: ${APP_SECURE_COOKIES:-false}
       DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "8080"
+
+  migrate:
+    build:
+      context: ./backend
+    entrypoint: ["migrate"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+      MIGRATIONS_DIR: "/migrations"
     depends_on:
       postgres:
         condition: service_healthy
-    expose:
-      - "8080"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   frontend:
     build:
       context: ./frontend
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_HTTPS_PORT:-3443}:443"
+      - "${FRONTEND_HTTPS_PORT:-3443}:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
