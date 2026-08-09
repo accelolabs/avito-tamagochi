@@ -1,0 +1,11 @@
+services:
+  backend:
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    profiles: [frontend]
+
+volumes:
+  postgres_data:
+    name: ${LIVE_POSTGRES_VOLUME:-avito-tamagotchi_live_data}

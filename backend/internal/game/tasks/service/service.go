@@ -75,6 +75,7 @@ func (s *service) ApplyAction(ctx context.Context, userID uuid.UUID, taskType ta
 		progress.Progress = progress.RequiredCount
 		completedAt := now
 		progress.CompletedAt = &completedAt
+		progress.Completed = true
 		pet.XP += rules.TaskXP(taskType)
 		pet.UpdatedAt = now
 		if err := s.petRepo.Update(ctx, tx, *pet); err != nil {
