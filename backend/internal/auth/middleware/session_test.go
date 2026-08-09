@@ -38,7 +38,7 @@ func TestRequireSessionAddsUserIDToContext(t *testing.T) {
 	})
 	handler := RequireSession(fakeService{userID: userID}, next)
 	request := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	request.AddCookie(&http.Cookie{Name: "session_id", Value: uuid.NewString()})
+	request.AddCookie(&http.Cookie{Name: "session_id", Value: uuid.NewString(), Path: "/", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	if response.Code != http.StatusNoContent {

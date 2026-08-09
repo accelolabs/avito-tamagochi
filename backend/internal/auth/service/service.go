@@ -160,7 +160,7 @@ func validateRegistration(email, password, displayName string) error {
 		return ErrInvalidInput
 	}
 	for _, char := range displayName {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_' || char == '-') {
+		if (char < 'a' || char > 'z') && (char < 'A' || char > 'Z') && char != '_' && char != '-' {
 			return ErrInvalidInput
 		}
 	}

@@ -51,6 +51,7 @@ DNS должен указывать на сервер. Откройте TCP `80`
 
 ```bash
 cd backend && go test ./...
+cd backend && golangci-lint run ./...
 cd frontend && npm run lint && npm run build
 docker compose config --quiet
 ```

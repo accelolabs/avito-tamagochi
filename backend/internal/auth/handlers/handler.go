@@ -59,6 +59,7 @@ func toUserResponse(user *model.User) userResponse {
 }
 
 func (h *Handler) setSessionCookie(w http.ResponseWriter, session *model.Session) {
+	// #nosec G124 -- Secure is environment-controlled so local HTTP development remains usable; HttpOnly and SameSite are always enforced.
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    session.ID.String(),
@@ -72,6 +73,7 @@ func (h *Handler) setSessionCookie(w http.ResponseWriter, session *model.Session
 }
 
 func (h *Handler) clearSessionCookie(w http.ResponseWriter) {
+	// #nosec G124 -- Secure must match the environment used when the session cookie was created.
 	http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, Expires: time.Unix(1, 0).UTC(), HttpOnly: true, Secure: h.secure, SameSite: http.SameSiteLaxMode})
 }
 
