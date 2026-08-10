@@ -14,7 +14,7 @@ MVP виртуального питомца: действия пользоват
 4. Новые уровни открывают награды.
 5. Сводка, лидерборд и WebSocket показывают изменения.
 
-Правила: [docs/game-design.md](docs/game-design.md). API: [api/openapi.yaml](api/openapi.yaml).
+Правила: [docs/game-design.md](docs/game-design.md). API: [api/openapi.yaml](api/openapi.yaml). One-page: [docs/one-page.md](docs/one-page.md).
 
 ## Стек
 
@@ -24,6 +24,24 @@ MVP виртуального питомца: действия пользоват
 - Docker Compose и Caddy.
 
 PostgreSQL — единственный источник истины. Изменения XP, заданий и наград защищены транзакциями и ограничениями БД.
+
+## Структура проекта
+
+- `backend/cmd` — API и миграции;
+- `backend/internal` — auth, игровые домены, realtime и инфраструктура;
+- `backend/migrations` — схема и ограничения PostgreSQL;
+- `frontend/src` — React-приложение и страницы;
+- `api` — OpenAPI-контракт;
+- `docs` — игровой дизайн, API, тестирование и one-page.
+
+История коммитов доступна в [GitHub-репозитории](https://github.com/accelolabs/avito-tamagochi).
+
+## Особенности реализации
+
+- Backend — единственный источник расчёта XP, уровней и наград.
+- Изменения состояния выполняются транзакционно в PostgreSQL.
+- Ограничения БД предотвращают повторное начисление XP и использование награды.
+- После изменений frontend получает WebSocket-событие и обновляет данные через API.
 
 ## Запуск
 
