@@ -32,7 +32,7 @@ PostgreSQL — единственный источник истины. Изме�
 - `backend/migrations` — схема и ограничения PostgreSQL;
 - `frontend/src` — React-приложение и страницы;
 - `api` — OpenAPI-контракт;
-- `docs` — игровой дизайн, API, тестирование и one-page.
+- `docs` — игровой дизайн, API, описание тестирования.
 
 История коммитов доступна в [GitHub-репозитории](https://github.com/accelolabs/avito-tamagochi).
 
