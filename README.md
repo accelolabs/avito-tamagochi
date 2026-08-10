@@ -83,16 +83,32 @@ CI использует `golangci-lint` версии `v2.10.1`. PostgreSQL integ
 
 ## Скриншоты
 
-| Авторизация | Питомец |
-| :---: | :---: |
-| `docs/screenshots/auth.png` | `docs/screenshots/dashboard.png` |
+### Авторизация
 
-| Задания | Награды | Лидерборд |
-| :---: | :---: | :---: |
-| `docs/screenshots/tasks.png` | `docs/screenshots/rewards.png` | `docs/screenshots/leaderboard.png` |
+<p align="center">
+  <img src="docs/screenshots/auth.png" alt="Авторизация" width="700">
+</p>
 
-После добавления файлов замените пути в таблицах на изображения, например:
+### Питомец
 
-```markdown
-![Питомец](docs/screenshots/dashboard.png)
-```
+<p align="center">
+  <img src="docs/screenshots/pet.png" alt="Питомец" width="700">
+</p>
+
+### Задания
+
+<p align="center">
+  <img src="docs/screenshots/task.png" alt="Задания" width="700">
+</p>
+
+### Награды
+
+<p align="center">
+  <img src="docs/screenshots/reward.png" alt="Награды" width="700">
+</p>
+
+### Лидерборд
+
+<p align="center">
+  <img src="docs/screenshots/leaderboard.png" alt="Лидерборд" width="700">
+</p>
