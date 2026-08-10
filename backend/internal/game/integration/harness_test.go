@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -73,13 +74,8 @@ func (n *recordingNotifier) assert(t *testing.T, userID uuid.UUID, events ...str
 		}
 		got = append(got, item.event)
 	}
-	if len(got) != len(events) {
+	if !slices.Equal(got, events) {
 		t.Fatalf("notifications = %v, want %v", got, events)
-	}
-	for index := range got {
-		if got[index] != events[index] {
-			t.Fatalf("notifications = %v, want %v", got, events)
-		}
 	}
 }
 

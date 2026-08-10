@@ -43,7 +43,7 @@ export default function Auth() {
           ? <RegistrationForm switchToLogin={() => setIsRegistration(false)} />
           : <LoginForm switchToRegistration={() => setIsRegistration(true)} />}
 
-        <footer className="auth__footer">© 2026 Avito Tamagotchi</footer>
+        <footer className="auth__footer">2026 Avito Tamagotchi</footer>
       </div>
     </div>
   )
@@ -62,7 +62,7 @@ function RegistrationForm({ switchToLogin }: { switchToLogin: () => void }) {
     event.preventDefault()
     setError(null)
     if (!displayNamePattern.test(displayName) || displayName.length < 2 || displayName.length > 32) {
-      setError('Имя: 2–32 латинских буквы, дефис или подчёркивание.')
+      setError('Имя: от 2 до 32 латинских букв, дефис или подчёркивание.')
       return
     }
     setSubmitting(true)
@@ -83,7 +83,7 @@ function RegistrationForm({ switchToLogin }: { switchToLogin: () => void }) {
         <AuthField label="Электронная почта" type="email" value={email} onChange={setEmail} placeholder="mail@example.ru" autoComplete="email" />
         <AuthField label="Пароль" type="password" value={password} onChange={setPassword} placeholder="Не менее 8 символов" autoComplete="new-password" minLength={8} maxLength={128} />
         {error && <p className="auth__error" role="alert">{error}</p>}
-        <button className="auth__submit" disabled={submitting}>{submitting ? 'Регистрируем…' : 'Зарегистрироваться'}</button>
+        <button className="auth__submit" disabled={submitting}>{submitting ? 'Регистрируем...' : 'Зарегистрироваться'}</button>
       </form>
       <div className="auth__form-footer">
         Уже есть аккаунт? <button type="button" className="auth__footer-link" onClick={switchToLogin}>Войти</button>
@@ -120,7 +120,7 @@ function LoginForm({ switchToRegistration }: { switchToRegistration: () => void 
         <AuthField label="Электронная почта" type="email" value={email} onChange={setEmail} placeholder="mail@example.ru" autoComplete="email" />
         <AuthField label="Пароль" type="password" value={password} onChange={setPassword} placeholder="Ваш пароль" autoComplete="current-password" minLength={8} maxLength={128} />
         {error && <p className="auth__error" role="alert">{error}</p>}
-        <button className="auth__submit" disabled={submitting}>{submitting ? 'Входим…' : 'Войти'}</button>
+        <button className="auth__submit" disabled={submitting}>{submitting ? 'Входим...' : 'Войти'}</button>
       </form>
       <div className="auth__form-footer">
         Нет аккаунта? <button type="button" className="auth__footer-link" onClick={switchToRegistration}>Зарегистрироваться</button>

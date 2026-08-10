@@ -5,8 +5,8 @@ import type { Reward } from '../../api/types'
 import { useGameEvent } from '../../realtime/RealtimeContext'
 
 const rewardContent = {
-  promotion: { title: 'Продвижение объявления', description: 'Поднимите своё объявление и получите больше просмотров.', icon: '🚀' },
-  free_delivery: { title: 'Бесплатная доставка', description: 'Воспользуйтесь бесплатной доставкой для одной покупки.', icon: '📦' },
+  promotion: { title: 'Продвижение объявления', description: 'Поднимите своё объявление и получите больше просмотров.' },
+  free_delivery: { title: 'Бесплатная доставка', description: 'Воспользуйтесь бесплатной доставкой для одной покупки.' },
 } as const
 
 export default function Rewards() {
@@ -49,7 +49,7 @@ export default function Rewards() {
     }
   }
 
-  if (loading) {return <div className="rewards-page"><div className="page-state">Загружаем награды…</div></div>}
+  if (loading) {return <div className="rewards-page"><div className="page-state">Загружаем награды...</div></div>}
 
   return (
     <div className="rewards-page">
@@ -71,7 +71,12 @@ function RewardCard({ reward, pending, onUse }: { reward: Reward; pending: boole
   return (
     <article className={`rewards__card ${used ? 'rewards__card--used' : ''}`}>
       <div className="rewards__card-header">
-        <div className="rewards__icon" aria-hidden="true">{content.icon}</div>
+        <div className="rewards__icon" aria-hidden="true">
+          <span
+            className="rewards__icon-image"
+            style={{ maskImage: 'url(/reward.svg)', WebkitMaskImage: 'url(/reward.svg)' }}
+          />
+        </div>
         <div className="rewards__status">{used ? 'Использовано' : 'Доступно'}</div>
       </div>
       <div className="rewards__card-info">
@@ -80,7 +85,7 @@ function RewardCard({ reward, pending, onUse }: { reward: Reward; pending: boole
         <span className="rewards__level">Награда за уровень {reward.level}</span>
       </div>
       <button className="rewards__use" type="button" disabled={used || pending} onClick={onUse}>
-        {used ? 'Уже использовано' : pending ? 'Используем…' : 'Использовать'}
+        {used ? 'Уже использовано' : pending ? 'Используем...' : 'Использовать'}
       </button>
     </article>
   )

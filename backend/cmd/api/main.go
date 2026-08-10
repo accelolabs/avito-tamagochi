@@ -67,6 +67,14 @@ func main() {
 	gameHandler.SetRoutes(mux)
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 	log.Printf("server started on http://localhost:%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Fatal(server.ListenAndServe())
 }

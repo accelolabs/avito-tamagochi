@@ -22,6 +22,7 @@ GAME_TEST_DATABASE_URL="postgres://..." go test ./internal/game/integration -cou
 
 ```bash
 cd backend && go test ./...
+cd backend && golangci-lint run --config ../.golangci.yml ./...
 cd frontend && npm run lint && npm run build
 docker compose config --quiet
 ```

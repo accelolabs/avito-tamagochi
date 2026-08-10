@@ -1,12 +1,13 @@
 package rules
 
 import (
+	"testing"
+	"time"
+
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
 	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 	rewardmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/model"
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
-	"testing"
-	"time"
 )
 
 func TestLevelFromXP(t *testing.T) {

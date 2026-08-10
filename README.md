@@ -1,5 +1,9 @@
 # Авито Тамагочи
 
+<p align="center">
+  <img src="frontend/src/assets/teen.png" alt="Питомец Авито Тамагочи" width="220">
+</p>
+
 MVP виртуального питомца: действия пользователя дают XP, повышают уровень и открывают персональные бонусы.
 
 ## Сценарий
@@ -30,7 +34,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Приложение: <http://localhost:3000>
+- Локально: <http://localhost:3000>
+- Production: <https://42plusplus-team.accelolabs.com>
 
 ```bash
 docker compose down
@@ -51,11 +56,12 @@ DNS должен указывать на сервер. Откройте TCP `80`
 
 ```bash
 cd backend && go test ./...
+cd backend && golangci-lint run --config ../.golangci.yml ./...
 cd frontend && npm run lint && npm run build
 docker compose config --quiet
 ```
 
-PostgreSQL integration-тесты запускаются отдельно: [docs/testing.md](docs/testing.md). Конфигурация backend-линтера находится в `.golangci.yml`.
+CI использует `golangci-lint` версии `v2.10.1`. PostgreSQL integration-тесты запускаются отдельно: [docs/testing.md](docs/testing.md).
 
 ## Ограничения MVP
 
@@ -74,3 +80,19 @@ PostgreSQL integration-тесты запускаются отдельно: [docs
 - [Игровой дизайн](docs/game-design.md)
 - [Игровой API](docs/game-api.md)
 - [Тестирование](docs/testing.md)
+
+## Скриншоты
+
+| Авторизация | Питомец |
+| :---: | :---: |
+| `docs/screenshots/auth.png` | `docs/screenshots/dashboard.png` |
+
+| Задания | Награды | Лидерборд |
+| :---: | :---: | :---: |
+| `docs/screenshots/tasks.png` | `docs/screenshots/rewards.png` | `docs/screenshots/leaderboard.png` |
+
+После добавления файлов замените пути в таблицах на изображения, например:
+
+```markdown
+![Питомец](docs/screenshots/dashboard.png)
+```

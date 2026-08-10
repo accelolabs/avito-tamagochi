@@ -59,6 +59,7 @@ func toUserResponse(user *model.User) userResponse {
 }
 
 func (h *Handler) setSessionCookie(w http.ResponseWriter, session *model.Session) {
+	// #nosec G124 -- Secure is environment-controlled so local HTTP development remains usable; HttpOnly and SameSite are always enforced.
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    session.ID.String(),
@@ -72,6 +73,7 @@ func (h *Handler) setSessionCookie(w http.ResponseWriter, session *model.Session
 }
 
 func (h *Handler) clearSessionCookie(w http.ResponseWriter) {
+	// #nosec G124 -- Secure must match the environment used when the session cookie was created.
 	http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, Expires: time.Unix(1, 0).UTC(), HttpOnly: true, Secure: h.secure, SameSite: http.SameSiteLaxMode})
 }
 
@@ -83,6 +85,22 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 		return false
 	}
 	return true
+}
+
+func decodeStringObject(data []byte, expectedKeys ...string) (map[string]string, error) {
+	var values map[string]string
+	if err := json.Unmarshal(data, &values); err != nil {
+		return nil, err
+	}
+	if len(values) != len(expectedKeys) {
+		return nil, errors.New("unexpected JSON fields")
+	}
+	for _, key := range expectedKeys {
+		if _, ok := values[key]; !ok {
+			return nil, errors.New("required JSON field is missing")
+		}
+	}
+	return values, nil
 }
 
 func mapServiceError(w http.ResponseWriter, err error) {
