@@ -65,3 +65,10 @@ func RewardTypeForLevel(level int) rewardmodel.Type {
 	}
 	return rewardmodel.Delivery
 }
+
+const EnergyDecayDuration = 48 * time.Hour
+
+func IsDead(lastChargedAt, now time.Time) bool {
+	return now.Sub(lastChargedAt) >= EnergyDecayDuration
+}
+
