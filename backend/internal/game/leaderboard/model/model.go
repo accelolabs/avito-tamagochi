@@ -8,4 +8,5 @@ type Entry struct {
 	DisplayName string
 	XP          int
 	Level       int
+	XPDelta     int
 }
