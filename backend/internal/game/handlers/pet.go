@@ -14,6 +14,8 @@ type petResponse struct {
 	Stage         petmodel.Stage `json:"stage"`
 	Energy        int            `json:"energy"`
 	LastChargedAt time.Time      `json:"lastChargedAt"`
+	ChargeStreak  int            `json:"chargeStreak"`
+	IsDead        bool           `json:"isDead"`
 }
 
 func (h *Handler) getPet(w http.ResponseWriter, r *http.Request) {
@@ -59,5 +61,7 @@ func toPetResponse(stats *petmodel.Stats) petResponse {
 		Stage:         stats.Stage,
 		Energy:        stats.Energy,
 		LastChargedAt: stats.LastChargedAt,
+		ChargeStreak:  stats.ChargeStreak,
+		IsDead:        stats.IsDead,
 	}
 }

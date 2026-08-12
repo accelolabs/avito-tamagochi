@@ -200,6 +200,15 @@ paths:
     get:
       operationId: getLeaderboard
       summary: Get the top ten and current user's rank
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, week, month]
+            default: all
+          description: Time period for calculating XP progress.
       responses:
         "200": { description: Leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/Leaderboard" } } } }
         "401": { $ref: "#/components/responses/UnauthorizedError" }
@@ -305,13 +314,15 @@ components:
     Pet:
       type: object
       additionalProperties: false
-      required: [xp, level, stage, energy, lastChargedAt]
+      required: [xp, level, stage, energy, lastChargedAt, chargeStreak, isDead]
       properties:
         xp: { type: integer, minimum: 0 }
         level: { type: integer, minimum: 1 }
         stage: { type: string, enum: [egg, child, teen, adult] }
         energy: { type: integer, minimum: 0, maximum: 100 }
         lastChargedAt: { type: string, format: date-time }
+        chargeStreak: { type: integer, minimum: 0 }
+        isDead: { type: boolean }
     Tasks:
       type: object
       additionalProperties: false
@@ -378,13 +389,14 @@ components:
     LeaderboardEntry:
       type: object
       additionalProperties: false
-      required: [rank, userId, displayName, xp, level]
+      required: [rank, userId, displayName, xp, level, xpDelta]
       properties:
         rank: { type: integer, minimum: 1 }
         userId: { type: string, format: uuid }
         displayName: { type: string }
         xp: { type: integer, minimum: 0 }
         level: { type: integer, minimum: 1 }
+        xpDelta: { type: integer, minimum: 0 }
 
     ErrorResponse:
       type: object

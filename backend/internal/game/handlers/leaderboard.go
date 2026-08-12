@@ -13,6 +13,7 @@ type leaderboardEntryResponse struct {
 	DisplayName string    `json:"displayName"`
 	XP          int       `json:"xp"`
 	Level       int       `json:"level"`
+	XPDelta     int       `json:"xpDelta"`
 }
 
 type leaderboardResponse struct {
@@ -26,12 +27,16 @@ func (h *Handler) getLeaderboard(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
-	items, err := h.leaderboardService.GetTop(r.Context())
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "all"
+	}
+	items, err := h.leaderboardService.GetTopByPeriod(r.Context(), period)
 	if err != nil {
 		mapGameError(w, err)
 		return
 	}
-	current, err := h.leaderboardService.GetUserRank(r.Context(), id)
+	current, err := h.leaderboardService.GetUserRankByPeriod(r.Context(), id, period)
 	if err != nil {
 		mapGameError(w, err)
 		return
@@ -47,5 +52,6 @@ func toLeaderboardResponse(value *leadermodel.Entry) *leaderboardEntryResponse {
 	if value == nil {
 		return nil
 	}
-	return &leaderboardEntryResponse{Rank: value.Rank, UserID: value.UserID, DisplayName: value.DisplayName, XP: value.XP, Level: value.Level}
+	return &leaderboardEntryResponse{Rank: value.Rank, UserID: value.UserID, DisplayName: value.DisplayName, XP: value.XP, Level: value.Level, XPDelta: value.XPDelta}
 }
+

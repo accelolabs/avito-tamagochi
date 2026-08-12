@@ -49,6 +49,25 @@ func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats
 	if err != nil {
 		return nil, err
 	}
+
+	// Death detection: if energy is 0, reset progress.
+	if rules.IsDead(value.LastChargedAt, now) && value.XP > 0 {
+		if err := s.petRepo.ResetProgress(ctx, tx, value.ID, userID); err != nil {
+			return nil, err
+		}
+		value.XP = 0
+		value.ChargeStreak = 0
+		value.LastStreakDate = nil
+		if err := tx.Commit(); err != nil {
+			return nil, err
+		}
+		if s.notify != nil {
+			s.notify.NotifyUser(userID, "pet_updated")
+			s.notify.NotifyUser(userID, "rewards_updated")
+		}
+		return s.stats(value, now), nil
+	}
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -68,6 +87,17 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 	if err != nil {
 		return nil, err
 	}
+
+	// If pet was dead, reset progress first.
+	if rules.IsDead(value.LastChargedAt, now) && value.XP > 0 {
+		if err := s.petRepo.ResetProgress(ctx, tx, value.ID, userID); err != nil {
+			return nil, err
+		}
+		value.XP = 0
+		value.ChargeStreak = 0
+		value.LastStreakDate = nil
+	}
+
 	exists, err := s.xpRepo.HasSourceKey(ctx, tx, userID, sourceKey)
 	if err != nil {
 		return nil, err
@@ -82,6 +112,23 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 	value.LastChargedAt = now
 	value.XP += rules.ChargeXPAmount
 	value.UpdatedAt = now
+
+	// Update streak: if last streak was yesterday, increment; otherwise reset to 1.
+	todayDate := localDate
+	if value.LastStreakDate != nil {
+		yesterday := todayDate.AddDate(0, 0, -1)
+		lastDate := clock.MoscowDate(*value.LastStreakDate)
+		if lastDate.Equal(yesterday) {
+			value.ChargeStreak++
+		} else if !lastDate.Equal(todayDate) {
+			value.ChargeStreak = 1
+		}
+		// If lastDate == todayDate, streak already counted for today, don't change.
+	} else {
+		value.ChargeStreak = 1
+	}
+	value.LastStreakDate = &todayDate
+
 	if err := s.petRepo.Update(ctx, tx, *value); err != nil {
 		return nil, err
 	}
@@ -119,5 +166,14 @@ func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID,
 
 func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
 	level := rules.LevelFromXP(value.XP)
-	return &petmodel.Stats{XP: value.XP, Level: level, Stage: rules.StageFromLevel(level), Energy: rules.EnergyPercent(value.LastChargedAt, now), LastChargedAt: value.LastChargedAt}
+	return &petmodel.Stats{
+		XP:            value.XP,
+		Level:         level,
+		Stage:         rules.StageFromLevel(level),
+		Energy:        rules.EnergyPercent(value.LastChargedAt, now),
+		LastChargedAt: value.LastChargedAt,
+		ChargeStreak:  value.ChargeStreak,
+		IsDead:        rules.IsDead(value.LastChargedAt, now),
+	}
 }
+
