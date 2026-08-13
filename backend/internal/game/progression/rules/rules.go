@@ -16,7 +16,6 @@ func LevelFromXP(xp int) int {
 	}
 	return xp/100 + 1
 }
-
 func StageFromLevel(level int) petmodel.Stage {
 	switch {
 	case level >= 9:
@@ -71,4 +70,3 @@ const EnergyDecayDuration = 48 * time.Hour
 func IsDead(lastChargedAt, now time.Time) bool {
 	return now.Sub(lastChargedAt) >= EnergyDecayDuration
 }
-

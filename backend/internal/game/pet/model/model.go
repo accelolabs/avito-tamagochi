@@ -16,16 +16,17 @@ const (
 )
 
 type Pet struct {
-	ID             uuid.UUID
-	UserID         uuid.UUID
-	XP             int
-	LastChargedAt  time.Time
-	ChargeStreak   int
-	LastStreakDate  *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	XP                int
+	LastChargedAt     time.Time
+	ChargeStreak      int
+	LongestStreak     int
+	LastStreakDate    *time.Time
+	StreakStartedDate *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
-
 type Stats struct {
 	XP            int
 	Level         int
@@ -35,4 +36,3 @@ type Stats struct {
 	ChargeStreak  int
 	IsDead        bool
 }
-

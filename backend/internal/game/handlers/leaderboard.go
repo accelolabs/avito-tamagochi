@@ -15,7 +15,6 @@ type leaderboardEntryResponse struct {
 	Level       int       `json:"level"`
 	XPDelta     int       `json:"xpDelta"`
 }
-
 type leaderboardResponse struct {
 	Entries     []leaderboardEntryResponse `json:"entries"`
 	CurrentUser *leaderboardEntryResponse  `json:"currentUser"`
@@ -54,4 +53,3 @@ func toLeaderboardResponse(value *leadermodel.Entry) *leaderboardEntryResponse {
 	}
 	return &leaderboardEntryResponse{Rank: value.Rank, UserID: value.UserID, DisplayName: value.DisplayName, XP: value.XP, Level: value.Level, XPDelta: value.XPDelta}
 }
-

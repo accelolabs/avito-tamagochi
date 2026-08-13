@@ -37,7 +37,6 @@ func (r *PostgreSQLRepository) GetTop(ctx context.Context) ([]leadermodel.Entry,
 	}
 	return result, rows.Err()
 }
-
 func (r *PostgreSQLRepository) GetUserRank(ctx context.Context, userID uuid.UUID) (*leadermodel.Entry, error) {
 	var value leadermodel.Entry
 	err := r.db.QueryRowContext(ctx, `
@@ -119,4 +118,3 @@ func (r *PostgreSQLRepository) GetUserRankByDelta(ctx context.Context, userID uu
 	}
 	return &value, nil
 }
-

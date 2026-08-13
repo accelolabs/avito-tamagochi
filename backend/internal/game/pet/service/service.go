@@ -50,14 +50,10 @@ func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats
 		return nil, err
 	}
 
-	// Death detection: if energy is 0, reset progress.
 	if rules.IsDead(value.LastChargedAt, now) && value.XP > 0 {
-		if err := s.petRepo.ResetProgress(ctx, tx, value.ID, userID); err != nil {
+		if err := s.resetAfterDeath(ctx, tx, value); err != nil {
 			return nil, err
 		}
-		value.XP = 0
-		value.ChargeStreak = 0
-		value.LastStreakDate = nil
 		if err := tx.Commit(); err != nil {
 			return nil, err
 		}
@@ -88,14 +84,10 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 		return nil, err
 	}
 
-	// If pet was dead, reset progress first.
 	if rules.IsDead(value.LastChargedAt, now) && value.XP > 0 {
-		if err := s.petRepo.ResetProgress(ctx, tx, value.ID, userID); err != nil {
+		if err := s.resetAfterDeath(ctx, tx, value); err != nil {
 			return nil, err
 		}
-		value.XP = 0
-		value.ChargeStreak = 0
-		value.LastStreakDate = nil
 	}
 
 	exists, err := s.xpRepo.HasSourceKey(ctx, tx, userID, sourceKey)
@@ -113,21 +105,7 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.St
 	value.XP += rules.ChargeXPAmount
 	value.UpdatedAt = now
 
-	// Update streak: if last streak was yesterday, increment; otherwise reset to 1.
-	todayDate := localDate
-	if value.LastStreakDate != nil {
-		yesterday := todayDate.AddDate(0, 0, -1)
-		lastDate := clock.MoscowDate(*value.LastStreakDate)
-		if lastDate.Equal(yesterday) {
-			value.ChargeStreak++
-		} else if !lastDate.Equal(todayDate) {
-			value.ChargeStreak = 1
-		}
-		// If lastDate == todayDate, streak already counted for today, don't change.
-	} else {
-		value.ChargeStreak = 1
-	}
-	value.LastStreakDate = &todayDate
+	s.advanceStreak(value, localDate)
 
 	if err := s.petRepo.Update(ctx, tx, *value); err != nil {
 		return nil, err
@@ -164,6 +142,33 @@ func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID,
 	return s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, initial)
 }
 
+func (s *service) resetAfterDeath(ctx context.Context, tx *sql.Tx, value *petmodel.Pet) error {
+	if err := s.petRepo.ResetAfterDeath(ctx, tx, value.ID, value.UserID); err != nil {
+		return err
+	}
+	value.XP = 0
+	value.ChargeStreak = 0
+	value.LastStreakDate = nil
+	value.StreakStartedDate = nil
+	return nil
+}
+
+func (s *service) advanceStreak(value *petmodel.Pet, today time.Time) {
+	yesterday := today.AddDate(0, 0, -1)
+	if value.LastStreakDate != nil && clock.MoscowDate(*value.LastStreakDate).Equal(yesterday) {
+		value.ChargeStreak++
+	} else {
+		value.ChargeStreak = 1
+		started := today
+		value.StreakStartedDate = &started
+	}
+	if value.ChargeStreak > value.LongestStreak {
+		value.LongestStreak = value.ChargeStreak
+	}
+	chargedOn := today
+	value.LastStreakDate = &chargedOn
+}
+
 func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
 	level := rules.LevelFromXP(value.XP)
 	return &petmodel.Stats{
@@ -176,4 +181,3 @@ func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
 		IsDead:        rules.IsDead(value.LastChargedAt, now),
 	}
 }
-

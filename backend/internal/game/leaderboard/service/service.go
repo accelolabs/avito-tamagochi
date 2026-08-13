@@ -16,7 +16,6 @@ type Service interface {
 	GetTopByPeriod(ctx context.Context, period string) ([]leadermodel.Entry, error)
 	GetUserRankByPeriod(ctx context.Context, userID uuid.UUID, period string) (*leadermodel.Entry, error)
 }
-
 type service struct {
 	repo  leaderrepository.Repository
 	clock clock.Clock
@@ -69,4 +68,3 @@ func (s *service) sinceFromPeriod(period string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 }
-

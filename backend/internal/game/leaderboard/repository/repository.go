@@ -14,4 +14,3 @@ type Repository interface {
 	GetTopByDelta(ctx context.Context, since time.Time) ([]leadermodel.Entry, error)
 	GetUserRankByDelta(ctx context.Context, userID uuid.UUID, since time.Time) (*leadermodel.Entry, error)
 }
-
