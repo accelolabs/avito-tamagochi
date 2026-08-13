@@ -20,7 +20,6 @@ import (
 	gameprogressionrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/repository"
 	gamerewardrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/repository"
 	gamerewardservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/rewards/service"
-	"github.com/accelolabs/avito-tamagochi/backend/internal/game/seed"
 	gamesummaryrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/repository"
 	gamesummaryservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/service"
 	gametaskrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/repository"
@@ -67,11 +66,6 @@ func main() {
 	authHandler.SetRoutes(mux)
 	gameHandler.SetRoutes(mux)
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
-
-	if env := os.Getenv("APP_ENV"); env != "production" {
-		mux.HandleFunc("POST /api/v1/debug/seed", seed.Handler(db))
-		log.Println("debug seed endpoint registered at POST /api/v1/debug/seed")
-	}
 
 	server := &http.Server{
 		Addr:              ":" + port,
