@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -69,8 +68,10 @@ func (h *Handler) getStreak(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) chargePet(w http.ResponseWriter, r *http.Request) {
 	var action string
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64))
-	if err := decoder.Decode(&action); err != nil || action != "charge" {
+	if !decodeJSONBody(w, r, &action, 64) {
+		return
+	}
+	if action != "charge" {
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 		return
 	}

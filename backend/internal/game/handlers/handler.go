@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
@@ -65,6 +66,19 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, errorResponse{Code: code, Message: message})
+}
+
+func decodeJSONBody(w http.ResponseWriter, r *http.Request, target any, limit int64) bool {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
+	if err := decoder.Decode(target); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+		return false
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+		return false
+	}
+	return true
 }
 
 func mapGameError(w http.ResponseWriter, err error) {
