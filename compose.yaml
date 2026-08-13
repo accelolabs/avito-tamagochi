@@ -60,6 +60,21 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  notifications:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+    entrypoint: ["notifications"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+      SMTP_ADDRESS: "mailpit:1025"
+      MAIL_FROM: ${MAIL_FROM:-no-reply@tamagochi.local}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+
   frontend:
     build:
       context: ./frontend

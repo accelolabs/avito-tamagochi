@@ -1,10 +1,9 @@
 package model
 
-type Status string
+import (
+	"time"
 
-const (
-	StatusSent    Status = "sent"
-	StatusSkipped Status = "skipped"
+	"github.com/google/uuid"
 )
 
 type Message struct {
@@ -14,8 +13,15 @@ type Message struct {
 	HTMLBody  string
 }
 
-type DispatchResult struct {
-	Status    Status
-	Energy    int
-	Threshold *int
+type Participant struct {
+	UserID        uuid.UUID
+	Email         string
+	LastChargedAt time.Time
+}
+
+type BatchResult struct {
+	Participants int
+	Sent         int
+	Skipped      int
+	Failed       int
 }

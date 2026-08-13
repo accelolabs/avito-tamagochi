@@ -2,34 +2,32 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
+	"time"
 
-	authmodel "github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
-	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/game/progression/rules"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/notifications/mailer"
 	notificationmodel "github.com/accelolabs/avito-tamagochi/backend/internal/notifications/model"
-	"github.com/google/uuid"
 )
 
 const subject = "Питомец ждёт вас"
 
-type UserFinder interface {
-	FindUser(context.Context, uuid.UUID) (*authmodel.User, error)
-}
-
-type PetFinder interface {
-	GetPet(context.Context, uuid.UUID) (*petmodel.Stats, error)
+type Repository interface {
+	TryRunLock(context.Context) (release func(), acquired bool, err error)
+	ListParticipantIDs(context.Context) ([]notificationmodel.Participant, error)
+	ProcessParticipant(context.Context, notificationmodel.Participant, func(notificationmodel.Participant, map[int]bool) (*int, error)) (bool, error)
 }
 
 type Service interface {
-	DispatchEnergy(context.Context, uuid.UUID) (*notificationmodel.DispatchResult, error)
+	DispatchAll(context.Context) (notificationmodel.BatchResult, error)
 }
 
 type service struct {
-	users  UserFinder
-	pets   PetFinder
+	repo   Repository
 	mailer mailer.Mailer
+	now    func() time.Time
 }
 
 type template struct {
@@ -45,27 +43,56 @@ var templates = map[int]template{
 	0:  {threshold: 0, firstLine: "Я полностью разрядился... 😭", secondLine: "Весь мой накопленный опыт стирается. Надеюсь, мы сможем еще увидеться."},
 }
 
-func New(users UserFinder, pets PetFinder, mailer mailer.Mailer) Service {
-	return &service{users: users, pets: pets, mailer: mailer}
+func New(repo Repository, mailer mailer.Mailer) Service {
+	return &service{repo: repo, mailer: mailer, now: time.Now}
 }
 
-func (s *service) DispatchEnergy(ctx context.Context, userID uuid.UUID) (*notificationmodel.DispatchResult, error) {
-	user, err := s.users.FindUser(ctx, userID)
+func (s *service) DispatchAll(ctx context.Context) (notificationmodel.BatchResult, error) {
+	release, acquired, err := s.repo.TryRunLock(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("find notification recipient: %w", err)
+		return notificationmodel.BatchResult{}, fmt.Errorf("acquire notification run lock: %w", err)
 	}
-	pet, err := s.pets.GetPet(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("get pet for energy notification: %w", err)
+	if !acquired {
+		return notificationmodel.BatchResult{}, nil
 	}
+	defer release()
 
-	selected, ok := templateForEnergy(pet.Energy)
+	participants, err := s.repo.ListParticipantIDs(ctx)
+	if err != nil {
+		return notificationmodel.BatchResult{}, fmt.Errorf("list notification participants: %w", err)
+	}
+	result := notificationmodel.BatchResult{Participants: len(participants)}
+	var failures []error
+	for _, participant := range participants {
+		sent, dispatchErr := s.repo.ProcessParticipant(ctx, participant, func(current notificationmodel.Participant, delivered map[int]bool) (*int, error) {
+			return s.dispatchParticipant(ctx, current, delivered)
+		})
+		if dispatchErr != nil {
+			result.Failed++
+			failures = append(failures, fmt.Errorf("participant %s: %w", participant.UserID, dispatchErr))
+			continue
+		}
+		if sent {
+			result.Sent++
+		} else {
+			result.Skipped++
+		}
+	}
+	return result, errors.Join(failures...)
+}
+
+func (s *service) dispatchParticipant(ctx context.Context, participant notificationmodel.Participant, delivered map[int]bool) (*int, error) {
+	energy := rules.EnergyPercent(participant.LastChargedAt, s.now().UTC())
+	selected, ok := templateForEnergy(energy)
 	if !ok {
-		return &notificationmodel.DispatchResult{Status: notificationmodel.StatusSkipped, Energy: pet.Energy}, nil
+		return nil, nil
+	}
+	if delivered[selected.threshold] {
+		return nil, nil
 	}
 
 	message := notificationmodel.Message{
-		Recipient: user.Email,
+		Recipient: participant.Email,
 		Subject:   subject,
 		TextBody:  selected.firstLine + "\n" + selected.secondLine,
 		HTMLBody:  "<p><strong>" + html.EscapeString(selected.firstLine) + "</strong><br>" + html.EscapeString(selected.secondLine) + "</p>",
@@ -74,7 +101,7 @@ func (s *service) DispatchEnergy(ctx context.Context, userID uuid.UUID) (*notifi
 		return nil, fmt.Errorf("send energy notification: %w", err)
 	}
 	threshold := selected.threshold
-	return &notificationmodel.DispatchResult{Status: notificationmodel.StatusSent, Energy: pet.Energy, Threshold: &threshold}, nil
+	return &threshold, nil
 }
 
 func templateForEnergy(energy int) (template, bool) {

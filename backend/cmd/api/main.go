@@ -24,9 +24,6 @@ import (
 	gamesummaryservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/summary/service"
 	gametaskrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/repository"
 	gametaskservice "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/service"
-	notificationhandlers "github.com/accelolabs/avito-tamagochi/backend/internal/notifications/handlers"
-	notificationmailer "github.com/accelolabs/avito-tamagochi/backend/internal/notifications/mailer"
-	notificationservice "github.com/accelolabs/avito-tamagochi/backend/internal/notifications/service"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/realtime"
 	_ "github.com/lib/pq"
 )
@@ -35,7 +32,6 @@ const (
 	maxDatabaseConnections = 25
 	maxDatabaseIdleTime    = 5 * time.Minute
 	maxDatabaseLifetime    = 30 * time.Minute
-	smtpTimeout            = 5 * time.Second
 )
 
 func main() {
@@ -72,16 +68,9 @@ func main() {
 	summaryService := gamesummaryservice.New(gamesummaryrepository.New(db), nil)
 	leaderboardService := gameleaderservice.New(gameleaderrepository.New(db))
 	gameHandler := gamehandlers.New(petService, taskService, rewardService, summaryService, leaderboardService, authService)
-	smtpAddress := environmentOrDefault("SMTP_ADDRESS", "localhost:1025")
-	mailFrom := environmentOrDefault("MAIL_FROM", "no-reply@tamagochi.local")
-	energyMailer := notificationmailer.NewSMTP(smtpAddress, mailFrom, smtpTimeout)
-	notificationService := notificationservice.New(authService, petService, energyMailer)
-	notificationHandler := notificationhandlers.New(notificationService, authService)
-
 	mux := http.NewServeMux()
 	authHandler.SetRoutes(mux)
 	gameHandler.SetRoutes(mux)
-	notificationHandler.SetRoutes(mux)
 	mux.Handle("GET /ws", middleware.RequireSession(authService, realtime.ServeWS(hub)))
 
 	server := &http.Server{
@@ -94,13 +83,6 @@ func main() {
 	}
 	log.Printf("server started on http://localhost:%s", port)
 	log.Fatal(server.ListenAndServe())
-}
-
-func environmentOrDefault(name, fallback string) string {
-	if value := os.Getenv(name); value != "" {
-		return value
-	}
-	return fallback
 }
 
 func configureDatabasePool(db *sql.DB) {
