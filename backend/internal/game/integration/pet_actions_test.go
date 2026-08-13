@@ -97,7 +97,7 @@ func TestPetActionAwardsOncePerMoscowDay(t *testing.T) {
 	insertPet(t, db, userID, 98, dayOne)
 	setPetEnergy(t, db, userID, 100, dayOne)
 
-	first, err := newPetService(db, dayOne).PetPet(context.Background(), userID)
+	first, err := newPetService(db, dayOne).Pet(context.Background(), userID)
 	if err != nil {
 		t.Fatalf("first pet action: %v", err)
 	}
@@ -108,13 +108,13 @@ func TestPetActionAwardsOncePerMoscowDay(t *testing.T) {
 		t.Fatalf("unlocked rewards = %d, want 1", got)
 	}
 
-	repeated, err := newPetService(db, dayOne).PetPet(context.Background(), userID)
+	repeated, err := newPetService(db, dayOne).Pet(context.Background(), userID)
 	if err != nil || repeated.XPAwarded != 0 || repeated.Pet.XP != 103 {
 		t.Fatalf("repeated pet action = %+v error=%v", repeated, err)
 	}
 
 	dayTwo := dayOne.Add(24 * time.Hour)
-	next, err := newPetService(db, dayTwo).PetPet(context.Background(), userID)
+	next, err := newPetService(db, dayTwo).Pet(context.Background(), userID)
 	if err != nil || next.XPAwarded != 5 || next.Pet.XP != 108 {
 		t.Fatalf("next-day pet action = %+v error=%v", next, err)
 	}
@@ -127,7 +127,7 @@ func TestPetActionRejectsDeadPetAndAppliesReset(t *testing.T) {
 	insertPet(t, db, userID, 90, now.Add(-48*time.Hour))
 	setPetEnergy(t, db, userID, 0, now)
 
-	result, err := newPetService(db, now).PetPet(context.Background(), userID)
+	result, err := newPetService(db, now).Pet(context.Background(), userID)
 	if !errors.Is(err, gameerrors.ErrPetDead) || result != nil {
 		t.Fatalf("dead pet action result=%+v error=%v", result, err)
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
 	gameerrors "github.com/accelolabs/avito-tamagochi/backend/internal/game/errors"
@@ -61,7 +60,7 @@ func (s *service) ApplyAction(ctx context.Context, userID uuid.UUID, taskType ta
 	if err != nil {
 		return err
 	}
-	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.Pet{ID: uuid.New(), UserID: userID, EnergyPercent: 50, EnergyUpdatedAt: now, LastChargedAt: now.Add(-24 * time.Hour), CreatedAt: now, UpdatedAt: now})
+	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.NewPet(userID, now))
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func StageFromLevel(level int) petmodel.Stage {
 }
 
 func EnergyPercent(stored int, updatedAt, now time.Time) int {
-	energy := stored - int(now.Sub(updatedAt).Seconds()/(48*time.Hour).Seconds()*100)
+	energy := stored - int(now.Sub(updatedAt).Seconds()/EnergyDecayDuration.Seconds()*100)
 	if energy < 0 {
 		return 0
 	}

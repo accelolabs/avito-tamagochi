@@ -43,7 +43,7 @@ func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Char
 		BaseChargeXP: 2, DailyRewardXP: 10, TotalXPAwarded: 12,
 	}, nil
 }
-func (fakeGameService) PetPet(_ context.Context, _ uuid.UUID) (*petmodel.PetActionResult, error) {
+func (fakeGameService) Pet(_ context.Context, _ uuid.UUID) (*petmodel.PetActionResult, error) {
 	return &petmodel.PetActionResult{Pet: &petmodel.Stats{Energy: 50, Level: 1, Stage: petmodel.Egg}, XPAwarded: 5}, nil
 }
 

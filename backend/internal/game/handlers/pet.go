@@ -97,7 +97,7 @@ func (h *Handler) applyPetAction(w http.ResponseWriter, r *http.Request) {
 			DailyRewardXP: result.DailyRewardXP, TotalXPAwarded: result.TotalXPAwarded,
 		})
 	case "pet":
-		result, err := h.petService.PetPet(r.Context(), id)
+		result, err := h.petService.Pet(r.Context(), id)
 		if err != nil {
 			mapGameError(w, err)
 			return

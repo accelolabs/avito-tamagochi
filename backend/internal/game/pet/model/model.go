@@ -29,6 +29,14 @@ type Pet struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
+
+func NewPet(userID uuid.UUID, now time.Time) Pet {
+	return Pet{
+		ID: uuid.New(), UserID: userID, EnergyPercent: 50, EnergyUpdatedAt: now,
+		LastChargedAt: now.Add(-24 * time.Hour), CreatedAt: now, UpdatedAt: now,
+	}
+}
+
 type Stats struct {
 	XP            int
 	Level         int
