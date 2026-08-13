@@ -75,6 +75,8 @@ func TestEnergyPercent(t *testing.T) {
 		want int
 	}{
 		{"full", chargedAt, 100}, {"half", chargedAt.Add(24 * time.Hour), 50},
+		{"quarter", chargedAt.Add(36 * time.Hour), 25},
+		{"five percent", chargedAt.Add(45*time.Hour + 36*time.Minute), 5},
 		{"empty", chargedAt.Add(48 * time.Hour), 0}, {"after empty", chargedAt.Add(72 * time.Hour), 0},
 	} {
 		t.Run(test.name, func(t *testing.T) {
