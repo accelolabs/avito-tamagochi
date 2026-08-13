@@ -42,7 +42,7 @@ var templates = map[int]template{
 	50: {threshold: 50, firstLine: "Я по тебе соскучился... 🥺", secondLine: "Навестишь меня?"},
 	25: {threshold: 25, firstLine: "Я что-то совсем без сил... 😥", secondLine: "Энергии почти не осталось. Заглянешь зарядить меня?"},
 	5:  {threshold: 5, firstLine: "Кажется, я сейчас совсем сяду… 🪫", secondLine: "Когда энергия закончится, я потеряю накопленный прогресс. Поможешь мне сохранить его?"},
-	0:  {threshold: 0, firstLine: "Я полностью разрядился... 😭", secondLine: "Все мои накопленные знания стираются. Надеюсь, мы сможем еще увидеться."},
+	0:  {threshold: 0, firstLine: "Я полностью разрядился... 😭", secondLine: "Весь мой накопленный опыт стирается. Надеюсь, мы сможем еще увидеться."},
 }
 
 func New(users UserFinder, pets PetFinder, mailer mailer.Mailer) Service {
