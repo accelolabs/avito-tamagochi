@@ -135,12 +135,15 @@ func upsertUser(ctx context.Context, tx *sql.Tx, index, xp, streak int, now, tod
 	streakStarted := today.AddDate(0, 0, -(streak - 1))
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO pets (
-			id, user_id, xp, last_charged_at, charge_streak, last_streak_date,
-			longest_streak, streak_started_date, created_at, updated_at
+			id, user_id, xp, energy_percent, energy_updated_at, last_charged_at,
+			charge_streak, last_streak_date, longest_streak, streak_started_date,
+			created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $5, $7, $8, $4)
+		VALUES ($1, $2, $3, 100, $4, $4, $5, $6, $5, $7, $8, $4)
 		ON CONFLICT (user_id) DO UPDATE
 		SET xp = EXCLUDED.xp,
+		    energy_percent = EXCLUDED.energy_percent,
+		    energy_updated_at = EXCLUDED.energy_updated_at,
 		    last_charged_at = EXCLUDED.last_charged_at,
 		    charge_streak = EXCLUDED.charge_streak,
 		    last_streak_date = EXCLUDED.last_streak_date,

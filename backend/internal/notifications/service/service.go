@@ -82,7 +82,7 @@ func (s *service) DispatchAll(ctx context.Context) (notificationmodel.BatchResul
 }
 
 func (s *service) dispatchParticipant(ctx context.Context, participant notificationmodel.Participant, delivered map[int]bool) (*int, error) {
-	energy := rules.EnergyPercent(participant.LastChargedAt, s.now().UTC())
+	energy := rules.EnergyPercent(participant.EnergyPercent, participant.EnergyUpdatedAt, s.now().UTC())
 	selected, ok := templateForEnergy(energy)
 	if !ok {
 		return nil, nil

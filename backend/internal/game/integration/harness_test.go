@@ -127,8 +127,8 @@ func insertPet(t *testing.T, db *sql.DB, userID uuid.UUID, xp int, lastChargedAt
 	t.Helper()
 	petID := uuid.New()
 	_, err := db.ExecContext(context.Background(), `
-		INSERT INTO pets (id, user_id, xp, last_charged_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $5)
+		INSERT INTO pets (id, user_id, xp, energy_percent, energy_updated_at, last_charged_at, created_at, updated_at)
+		VALUES ($1, $2, $3, 100, $4, $4, $5, $5)
 	`, petID, userID, xp, lastChargedAt, lastChargedAt)
 	if err != nil {
 		t.Fatalf("insert pet: %v", err)

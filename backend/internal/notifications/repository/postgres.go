@@ -37,7 +37,7 @@ func (r *PostgreSQLRepository) TryRunLock(ctx context.Context) (func(), bool, er
 
 func (r *PostgreSQLRepository) ListParticipantIDs(ctx context.Context) ([]notificationmodel.Participant, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT u.id, u.email, p.last_charged_at
+		SELECT u.id, u.email, p.energy_percent, p.energy_updated_at
 		FROM users u
 		JOIN pets p ON p.user_id = u.id
 		ORDER BY u.id
@@ -49,7 +49,7 @@ func (r *PostgreSQLRepository) ListParticipantIDs(ctx context.Context) ([]notifi
 	var participants []notificationmodel.Participant
 	for rows.Next() {
 		var participant notificationmodel.Participant
-		if err := rows.Scan(&participant.UserID, &participant.Email, &participant.LastChargedAt); err != nil {
+		if err := rows.Scan(&participant.UserID, &participant.Email, &participant.EnergyPercent, &participant.EnergyUpdatedAt); err != nil {
 			return nil, err
 		}
 		participants = append(participants, participant)
@@ -69,12 +69,12 @@ func (r *PostgreSQLRepository) ProcessParticipant(
 	defer func() { _ = tx.Rollback() }()
 
 	if err := tx.QueryRowContext(ctx, `
-		SELECT u.email, p.last_charged_at
+		SELECT u.email, p.energy_percent, p.energy_updated_at
 		FROM users u
 		JOIN pets p ON p.user_id = u.id
 		WHERE u.id = $1
 		FOR UPDATE OF p
-	`, participant.UserID).Scan(&participant.Email, &participant.LastChargedAt); err != nil {
+	`, participant.UserID).Scan(&participant.Email, &participant.EnergyPercent, &participant.EnergyUpdatedAt); err != nil {
 		return false, err
 	}
 	delivered, err := deliveredThresholds(ctx, tx, participant)

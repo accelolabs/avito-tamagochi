@@ -6,26 +6,21 @@ import (
 )
 
 func TestIsDead(t *testing.T) {
-	now := time.Date(2026, 8, 12, 12, 0, 0, 0, time.UTC)
-
 	tests := []struct {
-		name          string
-		lastChargedAt time.Time
-		want          bool
+		name   string
+		energy int
+		want   bool
 	}{
-		{"just charged", now, false},
-		{"charged 1 hour ago", now.Add(-1 * time.Hour), false},
-		{"charged 47h59m ago", now.Add(-47*time.Hour - 59*time.Minute), false},
-		{"charged exactly 48h ago", now.Add(-48 * time.Hour), true},
-		{"charged 49h ago", now.Add(-49 * time.Hour), true},
-		{"charged 72h ago", now.Add(-72 * time.Hour), true},
+		{"charged", 100, false},
+		{"almost empty", 1, false},
+		{"empty", 0, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := IsDead(tt.lastChargedAt, now)
+			got := IsDead(tt.energy)
 			if got != tt.want {
-				t.Errorf("IsDead(%v, %v) = %v, want %v", tt.lastChargedAt, now, got, tt.want)
+				t.Errorf("IsDead(%d) = %v, want %v", tt.energy, got, tt.want)
 			}
 		})
 	}

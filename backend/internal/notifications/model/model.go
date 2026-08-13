@@ -14,9 +14,10 @@ type Message struct {
 }
 
 type Participant struct {
-	UserID        uuid.UUID
-	Email         string
-	LastChargedAt time.Time
+	UserID          uuid.UUID
+	Email           string
+	EnergyPercent   int
+	EnergyUpdatedAt time.Time
 }
 
 type BatchResult struct {

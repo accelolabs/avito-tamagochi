@@ -9,7 +9,10 @@ import (
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
 )
 
-const ChargeXPAmount = 10
+const (
+	ChargeXPAmount   = 2
+	ChargeEnergyGain = 20
+)
 
 const (
 	DailyRewardBaseXP = 10
@@ -36,8 +39,8 @@ func StageFromLevel(level int) petmodel.Stage {
 	}
 }
 
-func EnergyPercent(lastChargedAt, now time.Time) int {
-	energy := 100 - int(now.Sub(lastChargedAt).Seconds()/(48*time.Hour).Seconds()*100)
+func EnergyPercent(stored int, updatedAt, now time.Time) int {
+	energy := stored - int(now.Sub(updatedAt).Seconds()/(48*time.Hour).Seconds()*100)
 	if energy < 0 {
 		return 0
 	}
@@ -74,8 +77,8 @@ func RewardTypeForLevel(level int) rewardmodel.Type {
 
 const EnergyDecayDuration = 48 * time.Hour
 
-func IsDead(lastChargedAt, now time.Time) bool {
-	return now.Sub(lastChargedAt) >= EnergyDecayDuration
+func IsDead(energy int) bool {
+	return energy <= 0
 }
 
 func CurrentStreak(stored int, lastChargeDate *time.Time, today time.Time) int {

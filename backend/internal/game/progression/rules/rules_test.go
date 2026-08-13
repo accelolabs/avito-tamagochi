@@ -80,7 +80,7 @@ func TestEnergyPercent(t *testing.T) {
 		{"empty", chargedAt.Add(48 * time.Hour), 0}, {"after empty", chargedAt.Add(72 * time.Hour), 0},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if got := EnergyPercent(chargedAt, test.now); got != test.want {
+			if got := EnergyPercent(100, chargedAt, test.now); got != test.want {
 				t.Errorf("EnergyPercent() = %d, want %d", got, test.want)
 			}
 		})

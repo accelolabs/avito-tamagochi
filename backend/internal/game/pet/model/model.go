@@ -19,6 +19,8 @@ type Pet struct {
 	ID                uuid.UUID
 	UserID            uuid.UUID
 	XP                int
+	EnergyPercent     int
+	EnergyUpdatedAt   time.Time
 	LastChargedAt     time.Time
 	ChargeStreak      int
 	LongestStreak     int

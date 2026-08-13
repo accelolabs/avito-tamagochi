@@ -61,11 +61,11 @@ func (s *service) ApplyAction(ctx context.Context, userID uuid.UUID, taskType ta
 	if err != nil {
 		return err
 	}
-	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.Pet{ID: uuid.New(), UserID: userID, LastChargedAt: now.Add(-24 * time.Hour), CreatedAt: now, UpdatedAt: now})
+	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.Pet{ID: uuid.New(), UserID: userID, EnergyPercent: 50, EnergyUpdatedAt: now, LastChargedAt: now.Add(-24 * time.Hour), CreatedAt: now, UpdatedAt: now})
 	if err != nil {
 		return err
 	}
-	if rules.IsDead(pet.LastChargedAt, now) {
+	if rules.IsDead(rules.EnergyPercent(pet.EnergyPercent, pet.EnergyUpdatedAt, now)) {
 		if err := s.petRepo.ResetAfterDeath(ctx, tx, pet.ID, userID); err != nil {
 			return err
 		}

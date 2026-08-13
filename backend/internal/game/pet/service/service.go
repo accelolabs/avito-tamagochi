@@ -52,7 +52,7 @@ func (s *service) GetPet(ctx context.Context, userID uuid.UUID) (*petmodel.Stats
 	if err != nil {
 		return nil, err
 	}
-	reset := rules.IsDead(value.LastChargedAt, now) && needsDeathReset(value)
+	reset := rules.IsDead(s.energy(value, now)) && needsDeathReset(value)
 	if reset {
 		if err := s.resetAfterDeath(ctx, tx, value); err != nil {
 			return nil, err
@@ -88,7 +88,7 @@ func (s *service) GetStreak(ctx context.Context, userID uuid.UUID) (*petmodel.St
 func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.ChargeResult, error) {
 	now := s.clock.Now().UTC()
 	localDate := clock.MoscowDate(now)
-	chargeKey := fmt.Sprintf("charge:%s", localDate.Format(time.DateOnly))
+	dailyRewardKey := fmt.Sprintf("daily_reward:%s", localDate.Format(time.DateOnly))
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -99,44 +99,56 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.Ch
 	if err != nil {
 		return nil, err
 	}
-	if rules.IsDead(value.LastChargedAt, now) && needsDeathReset(value) {
+	currentEnergy := s.energy(value, now)
+	if rules.IsDead(currentEnergy) && needsDeathReset(value) {
 		if err := s.resetAfterDeath(ctx, tx, value); err != nil {
 			return nil, err
 		}
 	}
-
-	exists, err := s.xpRepo.HasSourceKey(ctx, tx, userID, chargeKey)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
+	newEnergy := min(currentEnergy+rules.ChargeEnergyGain, 100)
+	if newEnergy == currentEnergy {
 		if err := tx.Commit(); err != nil {
 			return nil, err
 		}
 		return &petmodel.ChargeResult{Pet: s.stats(value, now)}, nil
 	}
 
+	dailyRewardExists, err := s.xpRepo.HasSourceKey(ctx, tx, userID, dailyRewardKey)
+	if err != nil {
+		return nil, err
+	}
+
 	oldLevel := rules.LevelFromXP(value.XP)
-	s.advanceStreak(value, localDate)
-	dailyReward := rules.DailyRewardXP(value.ChargeStreak)
+	dailyReward := 0
+	if !dailyRewardExists {
+		s.advanceStreak(value, localDate)
+		dailyReward = rules.DailyRewardXP(value.ChargeStreak)
+	}
 	totalAwarded := rules.ChargeXPAmount + dailyReward
 	value.LastChargedAt = now
+	value.EnergyPercent = newEnergy
+	value.EnergyUpdatedAt = now
 	value.XP += totalAwarded
 	value.UpdatedAt = now
 	if err := s.petRepo.Update(ctx, tx, *value); err != nil {
 		return nil, err
 	}
+	if err := s.petRepo.ResetEnergyNotifications(ctx, tx, userID, newEnergy); err != nil {
+		return nil, err
+	}
 
+	chargeEventID := uuid.New()
 	events := []progressionmodel.XPEvent{
 		{
-			ID: uuid.New(), UserID: userID, PetID: value.ID, Source: "charge",
-			SourceKey: chargeKey, Amount: rules.ChargeXPAmount, OccurredAt: now, LocalDate: localDate,
+			ID: chargeEventID, UserID: userID, PetID: value.ID, Source: "charge",
+			SourceKey: "charge:" + chargeEventID.String(), Amount: rules.ChargeXPAmount, OccurredAt: now, LocalDate: localDate,
 		},
-		{
+	}
+	if dailyReward > 0 {
+		events = append(events, progressionmodel.XPEvent{
 			ID: uuid.New(), UserID: userID, PetID: value.ID, Source: "daily_reward",
-			SourceKey: fmt.Sprintf("daily_reward:%s", localDate.Format(time.DateOnly)),
-			Amount:    dailyReward, OccurredAt: now, LocalDate: localDate,
-		},
+			SourceKey: dailyRewardKey, Amount: dailyReward, OccurredAt: now, LocalDate: localDate,
+		})
 	}
 	for _, event := range events {
 		if err := s.xpRepo.CreateXPEvent(ctx, tx, event); err != nil {
@@ -171,7 +183,7 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.Ch
 
 func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID, now time.Time) (*petmodel.Pet, error) {
 	initial := petmodel.Pet{
-		ID: uuid.New(), UserID: userID, LastChargedAt: now.Add(-24 * time.Hour),
+		ID: uuid.New(), UserID: userID, EnergyPercent: 50, EnergyUpdatedAt: now, LastChargedAt: now.Add(-24 * time.Hour),
 		CreatedAt: now, UpdatedAt: now,
 	}
 	return s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, initial)
@@ -208,9 +220,13 @@ func (s *service) stats(value *petmodel.Pet, now time.Time) *petmodel.Stats {
 	level := rules.LevelFromXP(value.XP)
 	return &petmodel.Stats{
 		XP: value.XP, Level: level, Stage: rules.StageFromLevel(level),
-		Energy:        rules.EnergyPercent(value.LastChargedAt, now),
-		LastChargedAt: value.LastChargedAt, IsDead: rules.IsDead(value.LastChargedAt, now),
+		Energy:        s.energy(value, now),
+		LastChargedAt: value.LastChargedAt, IsDead: rules.IsDead(s.energy(value, now)),
 	}
+}
+
+func (s *service) energy(value *petmodel.Pet, now time.Time) int {
+	return rules.EnergyPercent(value.EnergyPercent, value.EnergyUpdatedAt, now)
 }
 
 func (s *service) notifyDeath(userID uuid.UUID) {
