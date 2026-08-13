@@ -132,14 +132,23 @@ paths:
       summary: Charge the pet
       description: >-
         The first charge in a Moscow calendar day restores energy to 100 and
-        grants 10 XP. Later calls on the same day return the unchanged pet.
+        grants 10 base XP plus a streak-based daily reward from 10 to 50 XP.
+        Later calls on the same day return zero awarded XP.
       requestBody:
         required: true
         content:
           application/json: { schema: { type: string, enum: [charge] } }
       responses:
-        "200": { description: Updated pet, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
+        "200": { description: Updated pet and awarded XP, content: { application/json: { schema: { $ref: "#/components/schemas/ChargeResult" } } } }
         "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+  /streak:
+    get:
+      operationId: getStreak
+      summary: Get the current user's charge streak
+      responses:
+        "200": { description: Current and longest streak, content: { application/json: { schema: { $ref: "#/components/schemas/Streak" } } } }
         "401": { $ref: "#/components/responses/UnauthorizedError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
   /tasks/today:
@@ -167,6 +176,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "409": { $ref: "#/components/responses/PetDeadError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards:
     get:
@@ -199,18 +209,33 @@ paths:
   /leaderboard:
     get:
       operationId: getLeaderboard
-      summary: Get the top ten and current user's rank
-      parameters:
-        - name: period
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [all, week, month]
-            default: all
-          description: Time period for calculating XP progress.
+      summary: Get the all-time XP top ten and current user's rank
       responses:
         "200": { description: Leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/Leaderboard" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+  /leaderboard/week:
+    get:
+      operationId: getWeeklyLeaderboard
+      summary: Get the XP top ten for the last 7 times 24 hours
+      responses:
+        "200": { description: Weekly XP delta leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/DeltaLeaderboard" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+  /leaderboard/month:
+    get:
+      operationId: getMonthlyLeaderboard
+      summary: Get the XP top ten for the last 30 times 24 hours
+      responses:
+        "200": { description: Monthly XP delta leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/DeltaLeaderboard" } } } }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+  /leaderboard/streak:
+    get:
+      operationId: getStreakLeaderboard
+      summary: Get the active charge streak top ten
+      responses:
+        "200": { description: Active streak leaderboard, content: { application/json: { schema: { $ref: "#/components/schemas/StreakLeaderboard" } } } }
         "401": { $ref: "#/components/responses/UnauthorizedError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
 
@@ -314,15 +339,32 @@ components:
     Pet:
       type: object
       additionalProperties: false
-      required: [xp, level, stage, energy, lastChargedAt, chargeStreak, isDead]
+      required: [xp, level, stage, energy, lastChargedAt, isDead]
       properties:
         xp: { type: integer, minimum: 0 }
         level: { type: integer, minimum: 1 }
         stage: { type: string, enum: [egg, child, teen, adult] }
         energy: { type: integer, minimum: 0, maximum: 100 }
         lastChargedAt: { type: string, format: date-time }
-        chargeStreak: { type: integer, minimum: 0 }
         isDead: { type: boolean }
+    ChargeResult:
+      type: object
+      additionalProperties: false
+      required: [pet, baseChargeXp, dailyRewardXp, totalXpAwarded]
+      properties:
+        pet: { $ref: "#/components/schemas/Pet" }
+        baseChargeXp: { type: integer, minimum: 0, maximum: 10 }
+        dailyRewardXp: { type: integer, minimum: 0, maximum: 50 }
+        totalXpAwarded: { type: integer, minimum: 0, maximum: 60 }
+    Streak:
+      type: object
+      additionalProperties: false
+      required: [currentStreak, longestStreak, lastChargeDate, nextDailyRewardXp]
+      properties:
+        currentStreak: { type: integer, minimum: 0 }
+        longestStreak: { type: integer, minimum: 0 }
+        lastChargeDate: { type: string, format: date, nullable: true }
+        nextDailyRewardXp: { type: integer, minimum: 10, maximum: 50 }
     Tasks:
       type: object
       additionalProperties: false
@@ -389,6 +431,26 @@ components:
     LeaderboardEntry:
       type: object
       additionalProperties: false
+      required: [rank, userId, displayName, xp, level]
+      properties:
+        rank: { type: integer, minimum: 1 }
+        userId: { type: string, format: uuid }
+        displayName: { type: string }
+        xp: { type: integer, minimum: 0 }
+        level: { type: integer, minimum: 1 }
+    DeltaLeaderboard:
+      type: object
+      additionalProperties: false
+      required: [entries, currentUser]
+      properties:
+        entries: { type: array, maxItems: 10, items: { $ref: "#/components/schemas/DeltaLeaderboardEntry" } }
+        currentUser:
+          allOf:
+            - $ref: "#/components/schemas/DeltaLeaderboardEntry"
+          nullable: true
+    DeltaLeaderboardEntry:
+      type: object
+      additionalProperties: false
       required: [rank, userId, displayName, xp, level, xpDelta]
       properties:
         rank: { type: integer, minimum: 1 }
@@ -397,6 +459,28 @@ components:
         xp: { type: integer, minimum: 0 }
         level: { type: integer, minimum: 1 }
         xpDelta: { type: integer, minimum: 0 }
+    StreakLeaderboard:
+      type: object
+      additionalProperties: false
+      required: [entries, currentUser]
+      properties:
+        entries: { type: array, maxItems: 10, items: { $ref: "#/components/schemas/StreakLeaderboardEntry" } }
+        currentUser:
+          allOf:
+            - $ref: "#/components/schemas/StreakLeaderboardEntry"
+          nullable: true
+    StreakLeaderboardEntry:
+      type: object
+      additionalProperties: false
+      required: [rank, userId, displayName, currentStreak, longestStreak, streakStartedAt, lastChargeDate]
+      properties:
+        rank: { type: integer, minimum: 1 }
+        userId: { type: string, format: uuid }
+        displayName: { type: string }
+        currentStreak: { type: integer, minimum: 1 }
+        longestStreak: { type: integer, minimum: 1 }
+        streakStartedAt: { type: string, format: date }
+        lastChargeDate: { type: string, format: date }
 
     ErrorResponse:
       type: object
@@ -413,6 +497,7 @@ components:
             - invalid_credentials
             - email_already_exists
             - task_not_available
+            - pet_dead
             - reward_not_found
             - reward_already_used
             - internal_error
@@ -429,6 +514,13 @@ components:
 
     UnauthorizedError:
       description: Authentication is required or the session has expired.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    PetDeadError:
+      description: The pet must be charged before task actions are available.
       content:
         application/json:
           schema:
