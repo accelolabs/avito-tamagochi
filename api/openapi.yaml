@@ -106,7 +106,11 @@ paths:
       description: >-
         Upgrades the authenticated HTTP request to a WebSocket connection.
         The server sends JSON event envelopes with an event name and does not
-        send an initial snapshot.
+        send an initial snapshot. Browser handshakes must use an Origin whose
+        host matches the request Host; non-browser clients may omit Origin.
+        The server sends ping frames every 54 seconds; each pong extends the
+        read deadline by 60 seconds. Client messages are ignored, but each
+        message is limited to 512 bytes.
       servers:
         - url: /
           description: WebSocket endpoint through Caddy
@@ -117,6 +121,13 @@ paths:
           description: WebSocket connection established
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: The WebSocket Origin does not match the request Host.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Forbidden
 
   /pet:
     get:
@@ -506,7 +517,9 @@ components:
 
   responses:
     ValidationError:
-      description: Request body is invalid or fails backend validation.
+      description: >-
+        Request body is malformed, contains trailing JSON values or unknown
+        fields, exceeds the endpoint limit, or fails backend validation.
       content:
         application/json:
           schema:
