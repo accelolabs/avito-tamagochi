@@ -92,6 +92,18 @@ func TestChargeRejectsUnknownAction(t *testing.T) {
 	}
 }
 
+func TestChargeRejectsTrailingJSONValue(t *testing.T) {
+	handler := &Handler{}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/pet/actions", strings.NewReader(`"charge" {}`))
+	response := httptest.NewRecorder()
+
+	handler.chargePet(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
 func TestTaskEndpointRequiresAuthentication(t *testing.T) {
 	handler := &Handler{}
 	response := httptest.NewRecorder()
