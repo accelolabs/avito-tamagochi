@@ -10,7 +10,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/ws": {
-        target: "wss://42plusplus-team.accelolabs.com",
+        target: "ws://42plusplus-team.accelolabs.com",
         ws: true,
       },
     },
