@@ -123,11 +123,11 @@ func TestChargePetCommitsBeforeNotifying(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ChargePet() error = %v", err)
 	}
-	if result.Pet.XP != 110 || result.Pet.Level != 2 || result.Pet.Energy != 100 {
-		t.Fatalf("ChargePet() result = %+v, want XP 110, level 2, energy 100", result)
+	if result.Pet.XP != 102 || result.Pet.Level != 2 || result.Pet.Energy != 70 {
+		t.Fatalf("ChargePet() result = %+v, want XP 102, level 2, energy 70", result)
 	}
-	if result.BaseChargeXP != 10 || result.DailyRewardXP != 10 || result.TotalXPAwarded != 20 {
-		t.Fatalf("ChargePet() award = %+v, want 10 base, 10 daily, 20 total", result)
+	if result.BaseChargeXP != 2 || result.DailyRewardXP != 10 || result.TotalXPAwarded != 12 {
+		t.Fatalf("ChargePet() award = %+v, want 2 base, 10 daily, 12 total", result)
 	}
 	notifier.assert(t, userID, "pet_updated", "rewards_updated")
 }
@@ -354,8 +354,8 @@ func committedChargeState(db *sql.DB, userID uuid.UUID) func(uuid.UUID, string) 
 		if err != nil {
 			return err
 		}
-		if xp != 110 || events != 2 || rewards != 1 {
-			return fmt.Errorf("charge state = (xp=%d, events=%d, rewards=%d), want (110, 2, 1)", xp, events, rewards)
+		if xp != 102 || events != 2 || rewards != 1 {
+			return fmt.Errorf("charge state = (xp=%d, events=%d, rewards=%d), want (102, 2, 1)", xp, events, rewards)
 		}
 		return nil
 	}

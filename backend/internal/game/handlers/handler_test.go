@@ -39,8 +39,8 @@ func TestAvailableRewardSerializesUsedAtAsNull(t *testing.T) {
 
 func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.ChargeResult, error) {
 	return &petmodel.ChargeResult{
-		Pet:          &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()},
-		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+		Pet:          &petmodel.Stats{XP: 102, Level: 2, Stage: petmodel.Egg, Energy: 70, LastChargedAt: time.Unix(20, 0).UTC()},
+		BaseChargeXP: 2, DailyRewardXP: 10, TotalXPAwarded: 12,
 	}, nil
 }
 func (fakeGameService) PetPet(_ context.Context, _ uuid.UUID) (*petmodel.PetActionResult, error) {
@@ -63,15 +63,15 @@ func TestPetResponseMapping(t *testing.T) {
 func TestChargeResultResponseSeparatesAwards(t *testing.T) {
 	response := httptest.NewRecorder()
 	writeJSON(response, http.StatusOK, chargeResultResponse{
-		Pet:          petResponse{XP: 20, Level: 1, Stage: petmodel.Egg, Energy: 100},
-		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+		Pet:          petResponse{XP: 12, Level: 1, Stage: petmodel.Egg, Energy: 70},
+		BaseChargeXP: 2, DailyRewardXP: 10, TotalXPAwarded: 12,
 	})
 
 	var payload map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if payload["baseChargeXp"] != float64(10) || payload["dailyRewardXp"] != float64(10) || payload["totalXpAwarded"] != float64(20) {
+	if payload["baseChargeXp"] != float64(2) || payload["dailyRewardXp"] != float64(10) || payload["totalXpAwarded"] != float64(12) {
 		t.Fatalf("unexpected charge award response: %#v", payload)
 	}
 	pet, ok := payload["pet"].(map[string]any)
@@ -80,6 +80,14 @@ func TestChargeResultResponseSeparatesAwards(t *testing.T) {
 	}
 	if _, exists := pet["chargeStreak"]; exists {
 		t.Fatalf("pet response still contains chargeStreak: %#v", pet)
+	}
+}
+
+func TestPetActionResultSerializesAward(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, petActionResultResponse{Pet: petResponse{Energy: 50}, XPAwarded: 5})
+	if response.Body.String() != "{\"pet\":{\"xp\":0,\"level\":0,\"stage\":\"\",\"energy\":50,\"lastChargedAt\":\"0001-01-01T00:00:00Z\",\"isDead\":false},\"xpAwarded\":5}\n" {
+		t.Fatalf("body = %q", response.Body.String())
 	}
 }
 

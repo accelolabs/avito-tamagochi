@@ -36,24 +36,24 @@ func TestChargeAwardsDailyRewardAndTracksStreak(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first charge: %v", err)
 	}
-	if first.Pet.XP != 20 || first.BaseChargeXP != 10 || first.DailyRewardXP != 10 || first.TotalXPAwarded != 20 {
-		t.Fatalf("first charge = %+v, want 20 total XP", first)
+	if first.Pet.XP != 12 || first.Pet.Energy != 70 || first.BaseChargeXP != 2 || first.DailyRewardXP != 10 || first.TotalXPAwarded != 12 {
+		t.Fatalf("first charge = %+v, want 70 energy and 12 total XP", first)
 	}
 
 	repeated, err := newService(dayOne).ChargePet(context.Background(), userID)
 	if err != nil {
 		t.Fatalf("repeated charge: %v", err)
 	}
-	if repeated.TotalXPAwarded != 0 || queryInt(t, db, `SELECT COUNT(*) FROM xp_events WHERE user_id = $1`, userID) != 2 {
-		t.Fatalf("repeated charge = %+v, want zero award and two events", repeated)
+	if repeated.Pet.XP != 14 || repeated.Pet.Energy != 90 || repeated.TotalXPAwarded != 2 || queryInt(t, db, `SELECT COUNT(*) FROM xp_events WHERE user_id = $1`, userID) != 3 {
+		t.Fatalf("repeated charge = %+v, want 90 energy, 2 XP and three events", repeated)
 	}
 
 	second, err := newService(dayOne.Add(24*time.Hour)).ChargePet(context.Background(), userID)
 	if err != nil {
 		t.Fatalf("second-day charge: %v", err)
 	}
-	if second.Pet.XP != 45 || second.DailyRewardXP != 15 || second.TotalXPAwarded != 25 {
-		t.Fatalf("second-day charge = %+v, want 25 awarded XP", second)
+	if second.Pet.XP != 31 || second.Pet.Energy != 60 || second.DailyRewardXP != 15 || second.TotalXPAwarded != 17 {
+		t.Fatalf("second-day charge = %+v, want 60 energy and 17 awarded XP", second)
 	}
 	streak, err := newService(dayOne.Add(24*time.Hour)).GetStreak(context.Background(), userID)
 	if err != nil {
