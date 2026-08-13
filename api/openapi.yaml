@@ -440,7 +440,10 @@ components:
       properties:
         xpEarned: { type: integer, minimum: 0 }
         completedTasks: { type: integer, minimum: 0 }
-        charges: { type: integer, minimum: 0 }
+        charges:
+          type: integer
+          minimum: 0
+          description: Charges that increased energy during the Moscow calendar day.
         level: { type: integer, minimum: 1 }
         currentXP: { type: integer, minimum: 0 }
         energy: { type: integer, minimum: 0, maximum: 100 }

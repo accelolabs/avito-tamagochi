@@ -43,7 +43,7 @@ docker compose config --quiet
 
 1. Запустить `docker compose up --build -d` и открыть <http://localhost:8025>.
 2. Зарегистрировать пользователя через `/api/v1/auth/register`, сохранив cookie `session_id`.
-3. Вызвать `GET /api/v1/pet`, затем `docker compose --profile tools run --rm --no-deps notifications`. Начальные 50% должны создать письмо на email регистрации.
+3. При запущенных PostgreSQL и Mailpit вызвать `GET /api/v1/pet`, затем `docker compose --profile tools run --rm --no-deps notifications`. Начальные 50% должны создать письмо на email регистрации.
 4. В PostgreSQL последовательно установить `energy_percent` в 25, 5 и 0, обновляя `energy_updated_at = CURRENT_TIMESTAMP`. После каждого изменения запустить команду и проверить соответствующий порог.
 5. Повторить команду без изменения энергии и убедиться, что письмо не дублируется.
 6. Зарядить питомца выше ранее отправленного порога, снова снизить энергию и убедиться, что письмо этого порога снова доступно.
