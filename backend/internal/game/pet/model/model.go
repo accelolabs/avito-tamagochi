@@ -45,6 +45,11 @@ type ChargeResult struct {
 	TotalXPAwarded int
 }
 
+type PetActionResult struct {
+	Pet       *Stats
+	XPAwarded int
+}
+
 type StreakStats struct {
 	CurrentStreak     int
 	LongestStreak     int

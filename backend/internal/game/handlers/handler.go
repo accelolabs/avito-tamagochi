@@ -40,7 +40,7 @@ func (h *Handler) SetRoutes(mux *http.ServeMux) {
 	}
 
 	handle(http.MethodGet, "/api/v1/pet", h.getPet)
-	handle(http.MethodPost, "/api/v1/pet/actions", h.chargePet)
+	handle(http.MethodPost, "/api/v1/pet/actions", h.applyPetAction)
 	handle(http.MethodGet, "/api/v1/streak", h.getStreak)
 	handle(http.MethodGet, "/api/v1/tasks/today", h.getTodayTasks)
 	handle(http.MethodPost, "/api/v1/mock-avito/actions", h.applyMockAction)

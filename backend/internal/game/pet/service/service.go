@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
+	gameerrors "github.com/accelolabs/avito-tamagochi/backend/internal/game/errors"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/notifier"
 	petmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/model"
 	petrepository "github.com/accelolabs/avito-tamagochi/backend/internal/game/pet/repository"
@@ -22,6 +23,7 @@ type Service interface {
 	GetPet(context.Context, uuid.UUID) (*petmodel.Stats, error)
 	GetStreak(context.Context, uuid.UUID) (*petmodel.StreakStats, error)
 	ChargePet(context.Context, uuid.UUID) (*petmodel.ChargeResult, error)
+	PetPet(context.Context, uuid.UUID) (*petmodel.PetActionResult, error)
 }
 
 type service struct {
@@ -179,6 +181,80 @@ func (s *service) ChargePet(ctx context.Context, userID uuid.UUID) (*petmodel.Ch
 		DailyRewardXP:  dailyReward,
 		TotalXPAwarded: totalAwarded,
 	}, nil
+}
+
+func (s *service) PetPet(ctx context.Context, userID uuid.UUID) (*petmodel.PetActionResult, error) {
+	now := s.clock.Now().UTC()
+	localDate := clock.MoscowDate(now)
+	sourceKey := fmt.Sprintf("pet:%s", localDate.Format(time.DateOnly))
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	value, err := s.getOrCreate(ctx, tx, userID, now)
+	if err != nil {
+		return nil, err
+	}
+	if rules.IsDead(s.energy(value, now)) {
+		reset := needsDeathReset(value)
+		if reset {
+			if err := s.resetAfterDeath(ctx, tx, value); err != nil {
+				return nil, err
+			}
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, err
+		}
+		if reset {
+			s.notifyDeath(userID)
+		}
+		return nil, gameerrors.ErrPetDead
+	}
+
+	exists, err := s.xpRepo.HasSourceKey(ctx, tx, userID, sourceKey)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		if err := tx.Commit(); err != nil {
+			return nil, err
+		}
+		return &petmodel.PetActionResult{Pet: s.stats(value, now)}, nil
+	}
+
+	oldLevel := rules.LevelFromXP(value.XP)
+	value.XP += rules.PetXPAmount
+	value.UpdatedAt = now
+	if err := s.petRepo.Update(ctx, tx, *value); err != nil {
+		return nil, err
+	}
+	event := progressionmodel.XPEvent{
+		ID: uuid.New(), UserID: userID, PetID: value.ID, Source: "pet",
+		SourceKey: sourceKey, Amount: rules.PetXPAmount, OccurredAt: now, LocalDate: localDate,
+	}
+	if err := s.xpRepo.CreateXPEvent(ctx, tx, event); err != nil {
+		return nil, err
+	}
+	newLevel := rules.LevelFromXP(value.XP)
+	for level := oldLevel + 1; level <= newLevel; level++ {
+		if s.rewardRepo != nil {
+			if err := s.rewardRepo.UnlockForLevel(ctx, tx, userID, level, rules.RewardTypeForLevel(level), now); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	if s.notify != nil {
+		s.notify.NotifyUser(userID, "pet_updated")
+		if newLevel > oldLevel {
+			s.notify.NotifyUser(userID, "rewards_updated")
+		}
+	}
+	return &petmodel.PetActionResult{Pet: s.stats(value, now), XPAwarded: rules.PetXPAmount}, nil
 }
 
 func (s *service) getOrCreate(ctx context.Context, tx *sql.Tx, userID uuid.UUID, now time.Time) (*petmodel.Pet, error) {

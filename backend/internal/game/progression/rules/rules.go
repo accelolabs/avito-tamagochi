@@ -12,6 +12,7 @@ import (
 const (
 	ChargeXPAmount   = 2
 	ChargeEnergyGain = 20
+	PetXPAmount      = 5
 )
 
 const (

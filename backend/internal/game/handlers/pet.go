@@ -23,6 +23,11 @@ type chargeResultResponse struct {
 	TotalXPAwarded int         `json:"totalXpAwarded"`
 }
 
+type petActionResultResponse struct {
+	Pet       petResponse `json:"pet"`
+	XPAwarded int         `json:"xpAwarded"`
+}
+
 type streakResponse struct {
 	CurrentStreak     int     `json:"currentStreak"`
 	LongestStreak     int     `json:"longestStreak"`
@@ -66,12 +71,12 @@ func (h *Handler) getStreak(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) chargePet(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) applyPetAction(w http.ResponseWriter, r *http.Request) {
 	var action string
 	if !decodeJSONBody(w, r, &action, 64) {
 		return
 	}
-	if action != "charge" {
+	if action != "charge" && action != "pet" {
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 		return
 	}
@@ -80,15 +85,27 @@ func (h *Handler) chargePet(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 		return
 	}
-	result, err := h.petService.ChargePet(r.Context(), id)
-	if err != nil {
-		mapGameError(w, err)
-		return
+	switch action {
+	case "charge":
+		result, err := h.petService.ChargePet(r.Context(), id)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, chargeResultResponse{
+			Pet: toPetResponse(result.Pet), BaseChargeXP: result.BaseChargeXP,
+			DailyRewardXP: result.DailyRewardXP, TotalXPAwarded: result.TotalXPAwarded,
+		})
+	case "pet":
+		result, err := h.petService.PetPet(r.Context(), id)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, petActionResultResponse{Pet: toPetResponse(result.Pet), XPAwarded: result.XPAwarded})
+	default:
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 	}
-	writeJSON(w, http.StatusOK, chargeResultResponse{
-		Pet: toPetResponse(result.Pet), BaseChargeXP: result.BaseChargeXP,
-		DailyRewardXP: result.DailyRewardXP, TotalXPAwarded: result.TotalXPAwarded,
-	})
 }
 
 func toPetResponse(stats *petmodel.Stats) petResponse {

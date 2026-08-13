@@ -43,6 +43,9 @@ func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Char
 		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
 	}, nil
 }
+func (fakeGameService) PetPet(_ context.Context, _ uuid.UUID) (*petmodel.PetActionResult, error) {
+	return &petmodel.PetActionResult{Pet: &petmodel.Stats{Energy: 50, Level: 1, Stage: petmodel.Egg}, XPAwarded: 5}, nil
+}
 
 func (fakeGameService) GetStreak(_ context.Context, _ uuid.UUID) (*petmodel.StreakStats, error) {
 	return &petmodel.StreakStats{NextDailyRewardXP: 10}, nil
@@ -85,7 +88,7 @@ func TestChargeRejectsUnknownAction(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/pet/actions", strings.NewReader(`"feed"`))
 	response := httptest.NewRecorder()
 
-	handler.chargePet(response, request)
+	handler.applyPetAction(response, request)
 
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
@@ -97,7 +100,7 @@ func TestChargeRejectsTrailingJSONValue(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/pet/actions", strings.NewReader(`"charge" {}`))
 	response := httptest.NewRecorder()
 
-	handler.chargePet(response, request)
+	handler.applyPetAction(response, request)
 
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
