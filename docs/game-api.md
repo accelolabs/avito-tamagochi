@@ -10,6 +10,7 @@
 | `POST` | `/api/v1/pet/actions` | Выполнить JSON-действие `"charge"`. |
 | `GET` | `/api/v1/tasks/today` | Получить три задания московского дня. |
 | `POST` | `/api/v1/mock-avito/actions` | Выполнить `view`, `favorite`, `create_listing` или `create_listing_in_category`. |
+| `POST` | `/api/v1/mock-notifications/energy` | Вручную проверить энергию и отправить mock email в Mailpit. |
 | `GET` | `/api/v1/rewards` | Получить награды пользователя. |
 | `POST` | `/api/v1/rewards/{rewardID}/use` | Использовать награду. |
 | `GET` | `/api/v1/summary/today` | Получить сводку московского дня. |
@@ -40,6 +41,31 @@
 - Общий лидерборд сортируется по `xp DESC, user_id ASC`.
 - Недельный и месячный лидерборды используют скользящие UTC-интервалы 7 × 24 и 30 × 24 часов и сортируются по `xp_delta DESC, user_id ASC`.
 - Лидерборд серий сортируется по текущей серии, дате её начала и `user_id`.
+
+## Mock email-уведомление
+
+Endpoint требует действующую cookie `session_id`, не принимает тело запроса и использует email текущего пользователя из регистрации:
+
+```bash
+curl -X POST --cookie "session_id=<session-id>" \
+  http://localhost:3000/api/v1/mock-notifications/energy
+```
+
+Границы шаблонов: 26–50% → 50%, 6–25% → 25%, 1–5% → 5%, 0% → 0%. При энергии 51–100% письмо не отправляется.
+
+Отправлено:
+
+```json
+{"status":"sent","energy":25,"threshold":25}
+```
+
+Пропущено:
+
+```json
+{"status":"skipped","energy":76,"threshold":null}
+```
+
+Оба результата возвращают `200`. Ошибка поиска пользователя, получения питомца или SMTP возвращает безопасный `500 internal_error`; внутренние данные клиенту не раскрываются. В mock нет scheduler, истории доставки и дедупликации, поэтому время само по себе письмо не отправляет, а повторный POST может отправить дубликат.
 
 ## Тестовые данные
 

@@ -22,11 +22,21 @@ services:
       APP_PORT: "8080"
       APP_SECURE_COOKIES: ${APP_SECURE_COOKIES:-false}
       DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+      SMTP_ADDRESS: "mailpit:1025"
+      MAIL_FROM: ${MAIL_FROM:-no-reply@tamagochi.local}
     depends_on:
       migrate:
         condition: service_completed_successfully
     expose:
       - "8080"
+
+  mailpit:
+    image: axllent/mailpit:v1.30.0
+    restart: unless-stopped
+    expose:
+      - "1025"
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
 
   migrate:
     build:
