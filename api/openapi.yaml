@@ -139,20 +139,29 @@ paths:
         "500": { $ref: "#/components/responses/InternalServerError" }
   /pet/actions:
     post:
-      operationId: chargePet
-      summary: Charge the pet
+      operationId: applyPetAction
+      summary: Charge or pet the pet
       description: >-
-        The first charge in a Moscow calendar day restores energy to 100 and
-        grants 10 base XP plus a streak-based daily reward from 10 to 50 XP.
-        Later calls on the same day return zero awarded XP.
+        Charge adds 20 energy up to 100 and grants 2 base XP when energy
+        increases. The first successful charge in a Moscow calendar day also
+        grants the streak-based daily reward from 10 to 50 XP. Pet grants 5 XP
+        once per Moscow calendar day and returns zero XP on repeated calls.
       requestBody:
         required: true
         content:
-          application/json: { schema: { type: string, enum: [charge] } }
+          application/json: { schema: { type: string, enum: [charge, pet] } }
       responses:
-        "200": { description: Updated pet and awarded XP, content: { application/json: { schema: { $ref: "#/components/schemas/ChargeResult" } } } }
+        "200":
+          description: Updated pet and awarded XP
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ChargeResult"
+                  - $ref: "#/components/schemas/PetActionResult"
         "400": { $ref: "#/components/responses/ValidationError" }
         "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "409": { $ref: "#/components/responses/PetDeadError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
   /streak:
     get:
@@ -188,30 +197,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "401": { $ref: "#/components/responses/UnauthorizedError" }
         "409": { $ref: "#/components/responses/PetDeadError" }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-  /mock-notifications/energy:
-    post:
-      operationId: sendMockEnergyNotification
-      summary: Evaluate and send the current pet energy notification through Mailpit
-      description: >-
-        Manually evaluates the current backend-calculated energy. Energy above
-        50 is skipped; lower energy sends the most recently crossed threshold
-        template to the registered user's email. Repeated calls may send
-        duplicate messages because the mock has no scheduler, history, or
-        deduplication state. The endpoint has no request body.
-      responses:
-        "200":
-          description: Notification sent or skipped
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EnergyNotificationResult"
-              examples:
-                sent:
-                  value: { status: sent, energy: 25, threshold: 25 }
-                skipped:
-                  value: { status: skipped, energy: 76, threshold: null }
-        "401": { $ref: "#/components/responses/UnauthorizedError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards:
     get:
@@ -388,9 +373,16 @@ components:
       required: [pet, baseChargeXp, dailyRewardXp, totalXpAwarded]
       properties:
         pet: { $ref: "#/components/schemas/Pet" }
-        baseChargeXp: { type: integer, minimum: 0, maximum: 10 }
+        baseChargeXp: { type: integer, minimum: 0, maximum: 2 }
         dailyRewardXp: { type: integer, minimum: 0, maximum: 50 }
-        totalXpAwarded: { type: integer, minimum: 0, maximum: 60 }
+        totalXpAwarded: { type: integer, minimum: 0, maximum: 52 }
+    PetActionResult:
+      type: object
+      additionalProperties: false
+      required: [pet, xpAwarded]
+      properties:
+        pet: { $ref: "#/components/schemas/Pet" }
+        xpAwarded: { type: integer, enum: [0, 5] }
     Streak:
       type: object
       additionalProperties: false
@@ -422,17 +414,6 @@ components:
       required: [status]
       properties:
         status: { type: string, enum: [applied] }
-    EnergyNotificationResult:
-      type: object
-      additionalProperties: false
-      required: [status, energy, threshold]
-      properties:
-        status: { type: string, enum: [sent, skipped] }
-        energy: { type: integer, minimum: 0, maximum: 100 }
-        threshold:
-          type: integer
-          nullable: true
-          enum: [0, 5, 25, 50]
     Rewards:
       type: object
       additionalProperties: false
