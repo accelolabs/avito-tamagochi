@@ -75,7 +75,7 @@ func TestTaskEndpointRequiresAuthentication(t *testing.T) {
 
 func TestLeaderboardSerializesCurrentUserAsNull(t *testing.T) {
 	response := httptest.NewRecorder()
-	writeJSON(response, http.StatusOK, leaderboardResponse{
+	writeJSON(response, http.StatusOK, leaderboardResponse[leaderboardEntryResponse]{
 		Entries:     []leaderboardEntryResponse{},
 		CurrentUser: nil,
 	})

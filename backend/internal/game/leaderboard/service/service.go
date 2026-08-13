@@ -10,61 +10,76 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	weekWindow  = 7 * 24 * time.Hour
+	monthWindow = 30 * 24 * time.Hour
+)
+
 type Service interface {
-	GetTop(context.Context) ([]leadermodel.Entry, error)
-	GetUserRank(context.Context, uuid.UUID) (*leadermodel.Entry, error)
-	GetTopByPeriod(ctx context.Context, period string) ([]leadermodel.Entry, error)
-	GetUserRankByPeriod(ctx context.Context, userID uuid.UUID, period string) (*leadermodel.Entry, error)
+	GetAll(context.Context, uuid.UUID) (*leadermodel.XPBoard, error)
+	GetWeekly(context.Context, uuid.UUID) (*leadermodel.XPBoard, error)
+	GetMonthly(context.Context, uuid.UUID) (*leadermodel.XPBoard, error)
+	GetStreak(context.Context, uuid.UUID) (*leadermodel.StreakBoard, error)
 }
+
 type service struct {
 	repo  leaderrepository.Repository
 	clock clock.Clock
 }
 
 func New(repo leaderrepository.Repository) Service {
-	return &service{repo: repo, clock: clock.RealClock{}}
+	return NewWithClock(repo, clock.RealClock{})
 }
 
-func NewWithClock(repo leaderrepository.Repository, c clock.Clock) Service {
-	if c == nil {
-		c = clock.RealClock{}
+func NewWithClock(repo leaderrepository.Repository, currentClock clock.Clock) Service {
+	if currentClock == nil {
+		currentClock = clock.RealClock{}
 	}
-	return &service{repo: repo, clock: c}
+	return &service{repo: repo, clock: currentClock}
 }
 
-func (s *service) GetTop(ctx context.Context) ([]leadermodel.Entry, error) {
-	return s.repo.GetTop(ctx)
-}
-
-func (s *service) GetUserRank(ctx context.Context, userID uuid.UUID) (*leadermodel.Entry, error) {
-	return s.repo.GetUserRank(ctx, userID)
-}
-
-func (s *service) GetTopByPeriod(ctx context.Context, period string) ([]leadermodel.Entry, error) {
-	since, ok := s.sinceFromPeriod(period)
-	if !ok {
-		return s.repo.GetTop(ctx)
+func (s *service) GetAll(ctx context.Context, userID uuid.UUID) (*leadermodel.XPBoard, error) {
+	entries, err := s.repo.GetTopByXP(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return s.repo.GetTopByDelta(ctx, since)
+	currentUser, err := s.repo.GetUserRankByXP(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &leadermodel.XPBoard{Entries: entries, CurrentUser: currentUser}, nil
 }
 
-func (s *service) GetUserRankByPeriod(ctx context.Context, userID uuid.UUID, period string) (*leadermodel.Entry, error) {
-	since, ok := s.sinceFromPeriod(period)
-	if !ok {
-		return s.repo.GetUserRank(ctx, userID)
-	}
-	return s.repo.GetUserRankByDelta(ctx, userID, since)
+func (s *service) GetWeekly(ctx context.Context, userID uuid.UUID) (*leadermodel.XPBoard, error) {
+	return s.getDelta(ctx, userID, s.clock.Now().UTC().Add(-weekWindow))
 }
 
-func (s *service) sinceFromPeriod(period string) (time.Time, bool) {
-	now := s.clock.Now().UTC()
-	today := clock.MoscowDate(now)
-	switch period {
-	case "week":
-		return today.AddDate(0, 0, -7), true
-	case "month":
-		return today.AddDate(0, 0, -30), true
-	default:
-		return time.Time{}, false
+func (s *service) GetMonthly(ctx context.Context, userID uuid.UUID) (*leadermodel.XPBoard, error) {
+	return s.getDelta(ctx, userID, s.clock.Now().UTC().Add(-monthWindow))
+}
+
+func (s *service) GetStreak(ctx context.Context, userID uuid.UUID) (*leadermodel.StreakBoard, error) {
+	today := clock.MoscowDate(s.clock.Now())
+	activeSince := today.AddDate(0, 0, -1)
+	entries, err := s.repo.GetTopByStreak(ctx, activeSince)
+	if err != nil {
+		return nil, err
 	}
+	currentUser, err := s.repo.GetUserRankByStreak(ctx, userID, activeSince)
+	if err != nil {
+		return nil, err
+	}
+	return &leadermodel.StreakBoard{Entries: entries, CurrentUser: currentUser}, nil
+}
+
+func (s *service) getDelta(ctx context.Context, userID uuid.UUID, since time.Time) (*leadermodel.XPBoard, error) {
+	entries, err := s.repo.GetTopByXPDelta(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	currentUser, err := s.repo.GetUserRankByXPDelta(ctx, userID, since)
+	if err != nil {
+		return nil, err
+	}
+	return &leadermodel.XPBoard{Entries: entries, CurrentUser: currentUser}, nil
 }

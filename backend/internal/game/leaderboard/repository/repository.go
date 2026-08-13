@@ -9,8 +9,10 @@ import (
 )
 
 type Repository interface {
-	GetTop(context.Context) ([]leadermodel.Entry, error)
-	GetUserRank(context.Context, uuid.UUID) (*leadermodel.Entry, error)
-	GetTopByDelta(ctx context.Context, since time.Time) ([]leadermodel.Entry, error)
-	GetUserRankByDelta(ctx context.Context, userID uuid.UUID, since time.Time) (*leadermodel.Entry, error)
+	GetTopByXP(context.Context) ([]leadermodel.XPEntry, error)
+	GetUserRankByXP(context.Context, uuid.UUID) (*leadermodel.XPEntry, error)
+	GetTopByXPDelta(context.Context, time.Time) ([]leadermodel.XPEntry, error)
+	GetUserRankByXPDelta(context.Context, uuid.UUID, time.Time) (*leadermodel.XPEntry, error)
+	GetTopByStreak(context.Context, time.Time) ([]leadermodel.StreakEntry, error)
+	GetUserRankByStreak(context.Context, uuid.UUID, time.Time) (*leadermodel.StreakEntry, error)
 }

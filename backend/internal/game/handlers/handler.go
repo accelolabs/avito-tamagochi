@@ -46,6 +46,9 @@ func (h *Handler) SetRoutes(mux *http.ServeMux) {
 	handle(http.MethodPost, "/api/v1/rewards/{rewardID}/use", h.useReward)
 	handle(http.MethodGet, "/api/v1/summary/today", h.getTodaySummary)
 	handle(http.MethodGet, "/api/v1/leaderboard", h.getLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/week", h.getWeeklyLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/month", h.getMonthlyLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/streak", h.getStreakLeaderboard)
 }
 
 type errorResponse struct {
