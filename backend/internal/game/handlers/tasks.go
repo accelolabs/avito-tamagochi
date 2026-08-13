@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	taskmodel "github.com/accelolabs/avito-tamagochi/backend/internal/game/tasks/model"
@@ -43,8 +42,7 @@ func (h *Handler) getTodayTasks(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) applyMockAction(w http.ResponseWriter, r *http.Request) {
 	var action taskmodel.Type
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64)).Decode(&action); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+	if !decodeJSONBody(w, r, &action, 64) {
 		return
 	}
 	id, ok := currentUserID(r)

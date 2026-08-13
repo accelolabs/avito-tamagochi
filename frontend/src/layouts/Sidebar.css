@@ -16,7 +16,16 @@
 .sidebar__user { margin: 2px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .sidebar__links { padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .sidebar__link { text-decoration: none; color: var(--color-text-primary); display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-radius: 8px; }
-.sidebar__link-icon { width: 20px; text-align: center; font-weight: 800; }
+.sidebar__link-icon,
+.sidebar__exit-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  background: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
 .sidebar__link--active { font-weight: 800; background: var(--color-bg); }
 .sidebar__link:hover { color: var(--color-default-hover); }
 .sidebar__footer { margin-top: auto; border-top: 1px solid var(--color-bg); padding: 14px; }

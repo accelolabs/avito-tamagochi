@@ -39,6 +39,17 @@ services:
       postgres:
         condition: service_healthy
 
+  seed:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+    entrypoint: ["seed"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-tamagotchi}:${POSTGRES_PASSWORD:-tamagotchi_dev}@postgres:5432/${POSTGRES_DB:-tamagotchi}?sslmode=disable"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   frontend:
     build:
       context: ./frontend

@@ -37,8 +37,15 @@ func TestAvailableRewardSerializesUsedAtAsNull(t *testing.T) {
 	}
 }
 
-func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {
-	return &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()}, nil
+func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.ChargeResult, error) {
+	return &petmodel.ChargeResult{
+		Pet:          &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()},
+		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+	}, nil
+}
+
+func (fakeGameService) GetStreak(_ context.Context, _ uuid.UUID) (*petmodel.StreakStats, error) {
+	return &petmodel.StreakStats{NextDailyRewardXP: 10}, nil
 }
 
 var _ petservice.Service = fakeGameService{}
@@ -50,9 +57,44 @@ func TestPetResponseMapping(t *testing.T) {
 	}
 }
 
+func TestChargeResultResponseSeparatesAwards(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, chargeResultResponse{
+		Pet:          petResponse{XP: 20, Level: 1, Stage: petmodel.Egg, Energy: 100},
+		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+	})
+
+	var payload map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload["baseChargeXp"] != float64(10) || payload["dailyRewardXp"] != float64(10) || payload["totalXpAwarded"] != float64(20) {
+		t.Fatalf("unexpected charge award response: %#v", payload)
+	}
+	pet, ok := payload["pet"].(map[string]any)
+	if !ok {
+		t.Fatalf("pet = %#v, want object", payload["pet"])
+	}
+	if _, exists := pet["chargeStreak"]; exists {
+		t.Fatalf("pet response still contains chargeStreak: %#v", pet)
+	}
+}
+
 func TestChargeRejectsUnknownAction(t *testing.T) {
 	handler := &Handler{}
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/pet/actions", strings.NewReader(`"feed"`))
+	response := httptest.NewRecorder()
+
+	handler.chargePet(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+func TestChargeRejectsTrailingJSONValue(t *testing.T) {
+	handler := &Handler{}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/pet/actions", strings.NewReader(`"charge" {}`))
 	response := httptest.NewRecorder()
 
 	handler.chargePet(response, request)
@@ -75,7 +117,7 @@ func TestTaskEndpointRequiresAuthentication(t *testing.T) {
 
 func TestLeaderboardSerializesCurrentUserAsNull(t *testing.T) {
 	response := httptest.NewRecorder()
-	writeJSON(response, http.StatusOK, leaderboardResponse{
+	writeJSON(response, http.StatusOK, leaderboardResponse[leaderboardEntryResponse]{
 		Entries:     []leaderboardEntryResponse{},
 		CurrentUser: nil,
 	})

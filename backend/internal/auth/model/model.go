@@ -23,11 +23,11 @@ type Session struct {
 
 type RegisterInput struct {
 	Email       string
-	Password    string
+	Password    string `json:"-"`
 	DisplayName string
 }
 
 type LoginInput struct {
 	Email    string
-	Password string
+	Password string `json:"-"`
 }

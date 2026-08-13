@@ -90,6 +90,38 @@ func TestRegisterMapsDuplicateEmail(t *testing.T) {
 	}
 }
 
+func TestRegisterRejectsUnexpectedJSONField(t *testing.T) {
+	handler := New(fakeService{register: func(model.RegisterInput) (*model.User, *model.Session, error) {
+		t.Fatal("service must not be called for an invalid request")
+		return nil, nil, nil
+	}})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(`{"email":"user@example.com","password":"password","displayName":"Player","admin":"true"}`))
+	response := httptest.NewRecorder()
+
+	handler.register(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+func TestRegisterRejectsTrailingJSONValue(t *testing.T) {
+	handler := New(fakeService{register: func(model.RegisterInput) (*model.User, *model.Session, error) {
+		t.Fatal("service must not be called for an invalid request")
+		return nil, nil, nil
+	}})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(
+		`{"email":"user@example.com","password":"password","displayName":"Player"} {}`,
+	))
+	response := httptest.NewRecorder()
+
+	handler.register(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
 func TestLoginSetsSessionCookieAndReturnsUser(t *testing.T) {
 	userID := uuid.New()
 	sessionID := uuid.New()

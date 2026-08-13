@@ -52,7 +52,7 @@ export default function Tasks() {
     }
   }
 
-  if (loading) {return <div className="tasks-container"><div className="page-state">Загружаем задания…</div></div>}
+  if (loading) {return <div className="tasks-container"><div className="page-state">Загружаем задания...</div></div>}
 
   return (
     <div className="tasks-container">
@@ -87,7 +87,7 @@ function TaskItem({ task, pending, onAction }: { task: Task; pending: boolean; o
         <span className="tasks__card-progress">Прогресс: {task.progress} / {task.requiredCount}</span>
       </div>
       <button className="tasks__complete-button" type="button" disabled={completed || pending} onClick={onAction}>
-        {completed ? 'Выполнено' : pending ? 'Выполняем…' : content.action}
+        {completed ? 'Выполнено' : pending ? 'Выполняем...' : content.action}
       </button>
     </article>
   )

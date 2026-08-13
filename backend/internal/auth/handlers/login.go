@@ -6,17 +6,27 @@ import (
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/model"
 )
 
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type loginRequest struct {
+	Email    string
+	password string
+}
+
+func (request *loginRequest) UnmarshalJSON(data []byte) error {
+	values, err := decodeStringObject(data, "email", "password")
+	if err != nil {
+		return err
+	}
+	request.Email = values["email"]
+	request.password = values["password"]
+	return nil
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
-	var request LoginRequest
+	var request loginRequest
 	if !decodeJSON(w, r, &request) {
 		return
 	}
-	user, session, err := h.service.Login(r.Context(), model.LoginInput{Email: request.Email, Password: request.Password})
+	user, session, err := h.service.Login(r.Context(), model.LoginInput{Email: request.Email, Password: request.password})
 	if err != nil {
 		mapServiceError(w, err)
 		return

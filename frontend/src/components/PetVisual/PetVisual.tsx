@@ -19,5 +19,5 @@ export function stageLabel(stage: PetStage) {
 
 export default function PetVisual({ stage }: { stage: PetStage }) {
   const presentation = stagePresentation[stage]
-  return <img className="pet-visual__image" src={presentation.image} alt={`Питомец, стадия «${presentation.label}»`} />
+  return <img className="pet-visual__image" src={presentation.image} alt={`Питомец, стадия ${presentation.label}`} />
 }
