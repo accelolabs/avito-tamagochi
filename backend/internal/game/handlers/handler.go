@@ -40,6 +40,7 @@ func (h *Handler) SetRoutes(mux *http.ServeMux) {
 
 	handle(http.MethodGet, "/api/v1/pet", h.getPet)
 	handle(http.MethodPost, "/api/v1/pet/actions", h.chargePet)
+	handle(http.MethodGet, "/api/v1/streak", h.getStreak)
 	handle(http.MethodGet, "/api/v1/tasks/today", h.getTodayTasks)
 	handle(http.MethodPost, "/api/v1/mock-avito/actions", h.applyMockAction)
 	handle(http.MethodGet, "/api/v1/rewards", h.getRewards)
@@ -72,6 +73,8 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 	case errors.Is(err, gameerrors.ErrTaskNotAvailable):
 		writeError(w, http.StatusBadRequest, "task_not_available", "task is not available today")
+	case errors.Is(err, gameerrors.ErrPetDead):
+		writeError(w, http.StatusConflict, "pet_dead", "charge the pet before completing tasks")
 	case errors.Is(err, gameerrors.ErrRewardNotFound):
 		writeError(w, http.StatusNotFound, "reward_not_found", "reward was not found")
 	case errors.Is(err, gameerrors.ErrRewardAlreadyUsed):

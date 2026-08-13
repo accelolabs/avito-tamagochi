@@ -37,8 +37,15 @@ func TestAvailableRewardSerializesUsedAtAsNull(t *testing.T) {
 	}
 }
 
-func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.Stats, error) {
-	return &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()}, nil
+func (fakeGameService) ChargePet(_ context.Context, _ uuid.UUID) (*petmodel.ChargeResult, error) {
+	return &petmodel.ChargeResult{
+		Pet:          &petmodel.Stats{XP: 110, Level: 2, Stage: petmodel.Egg, Energy: 100, LastChargedAt: time.Unix(20, 0).UTC()},
+		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+	}, nil
+}
+
+func (fakeGameService) GetStreak(_ context.Context, _ uuid.UUID) (*petmodel.StreakStats, error) {
+	return &petmodel.StreakStats{NextDailyRewardXP: 10}, nil
 }
 
 var _ petservice.Service = fakeGameService{}
@@ -47,6 +54,29 @@ func TestPetResponseMapping(t *testing.T) {
 	response := toPetResponse(&petmodel.Stats{XP: 100, Level: 2, Stage: petmodel.Egg, Energy: 50, LastChargedAt: time.Unix(10, 0).UTC()})
 	if response.XP != 100 || response.Level != 2 || response.Stage != petmodel.Egg || response.Energy != 50 {
 		t.Fatalf("unexpected pet response: %+v", response)
+	}
+}
+
+func TestChargeResultResponseSeparatesAwards(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, chargeResultResponse{
+		Pet:          petResponse{XP: 20, Level: 1, Stage: petmodel.Egg, Energy: 100},
+		BaseChargeXP: 10, DailyRewardXP: 10, TotalXPAwarded: 20,
+	})
+
+	var payload map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload["baseChargeXp"] != float64(10) || payload["dailyRewardXp"] != float64(10) || payload["totalXpAwarded"] != float64(20) {
+		t.Fatalf("unexpected charge award response: %#v", payload)
+	}
+	pet, ok := payload["pet"].(map[string]any)
+	if !ok {
+		t.Fatalf("pet = %#v, want object", payload["pet"])
+	}
+	if _, exists := pet["chargeStreak"]; exists {
+		t.Fatalf("pet response still contains chargeStreak: %#v", pet)
 	}
 }
 

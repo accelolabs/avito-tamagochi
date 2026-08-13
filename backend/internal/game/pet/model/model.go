@@ -33,6 +33,19 @@ type Stats struct {
 	Stage         Stage
 	Energy        int
 	LastChargedAt time.Time
-	ChargeStreak  int
 	IsDead        bool
+}
+
+type ChargeResult struct {
+	Pet            *Stats
+	BaseChargeXP   int
+	DailyRewardXP  int
+	TotalXPAwarded int
+}
+
+type StreakStats struct {
+	CurrentStreak     int
+	LongestStreak     int
+	LastChargeDate    *time.Time
+	NextDailyRewardXP int
 }

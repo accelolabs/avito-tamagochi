@@ -8,7 +8,7 @@ SET longest_streak = GREATEST(longest_streak, charge_streak),
     END;
 
 ALTER TABLE pets
-    ADD CONSTRAINT pets_longest_streak_check CHECK (longest_streak >= charge_streak),
+    ADD CONSTRAINT pets_longest_vs_current_streak_check CHECK (longest_streak >= charge_streak),
     ADD CONSTRAINT pets_streak_dates_check CHECK (
         (charge_streak = 0 AND streak_started_date IS NULL)
         OR (charge_streak > 0 AND streak_started_date IS NOT NULL AND last_streak_date IS NOT NULL)
@@ -18,4 +18,4 @@ ALTER TABLE pets
 
 ALTER TABLE pets
     DROP CONSTRAINT pets_streak_dates_check,
-    DROP CONSTRAINT pets_longest_streak_check;
+    DROP CONSTRAINT pets_longest_vs_current_streak_check;
