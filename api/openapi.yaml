@@ -189,6 +189,30 @@ paths:
         "401": { $ref: "#/components/responses/UnauthorizedError" }
         "409": { $ref: "#/components/responses/PetDeadError" }
         "500": { $ref: "#/components/responses/InternalServerError" }
+  /mock-notifications/energy:
+    post:
+      operationId: sendMockEnergyNotification
+      summary: Evaluate and send the current pet energy notification through Mailpit
+      description: >-
+        Manually evaluates the current backend-calculated energy. Energy above
+        50 is skipped; lower energy sends the most recently crossed threshold
+        template to the registered user's email. Repeated calls may send
+        duplicate messages because the mock has no scheduler, history, or
+        deduplication state. The endpoint has no request body.
+      responses:
+        "200":
+          description: Notification sent or skipped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnergyNotificationResult"
+              examples:
+                sent:
+                  value: { status: sent, energy: 25, threshold: 25 }
+                skipped:
+                  value: { status: skipped, energy: 76, threshold: null }
+        "401": { $ref: "#/components/responses/UnauthorizedError" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
   /rewards:
     get:
       operationId: getRewards
@@ -398,6 +422,17 @@ components:
       required: [status]
       properties:
         status: { type: string, enum: [applied] }
+    EnergyNotificationResult:
+      type: object
+      additionalProperties: false
+      required: [status, energy, threshold]
+      properties:
+        status: { type: string, enum: [sent, skipped] }
+        energy: { type: integer, minimum: 0, maximum: 100 }
+        threshold:
+          type: integer
+          nullable: true
+          enum: [0, 5, 25, 50]
     Rewards:
       type: object
       additionalProperties: false
