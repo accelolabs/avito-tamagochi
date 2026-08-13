@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,10 @@ type Participant struct {
 	EnergyPercent   int
 	EnergyUpdatedAt time.Time
 }
+
+type DeliveredThresholds map[int]bool
+
+type ParticipantHandler func(context.Context, Participant, DeliveredThresholds) (*int, error)
 
 type BatchResult struct {
 	Participants int

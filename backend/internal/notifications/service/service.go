@@ -16,8 +16,8 @@ const subject = "Питомец ждёт вас"
 
 type Repository interface {
 	TryRunLock(context.Context) (release func(), acquired bool, err error)
-	ListParticipantIDs(context.Context) ([]notificationmodel.Participant, error)
-	ProcessParticipant(context.Context, notificationmodel.Participant, func(notificationmodel.Participant, map[int]bool) (*int, error)) (bool, error)
+	ListParticipants(context.Context) ([]notificationmodel.Participant, error)
+	WithParticipantLock(context.Context, notificationmodel.Participant, notificationmodel.ParticipantHandler) (bool, error)
 }
 
 type Service interface {
@@ -57,19 +57,22 @@ func (s *service) DispatchAll(ctx context.Context) (notificationmodel.BatchResul
 	}
 	defer release()
 
-	participants, err := s.repo.ListParticipantIDs(ctx)
+	participants, err := s.repo.ListParticipants(ctx)
 	if err != nil {
 		return notificationmodel.BatchResult{}, fmt.Errorf("list notification participants: %w", err)
 	}
+	result, failures := s.dispatchParticipants(ctx, participants)
+	return result, errors.Join(failures...)
+}
+
+func (s *service) dispatchParticipants(ctx context.Context, participants []notificationmodel.Participant) (notificationmodel.BatchResult, []error) {
 	result := notificationmodel.BatchResult{Participants: len(participants)}
 	var failures []error
 	for _, participant := range participants {
-		sent, dispatchErr := s.repo.ProcessParticipant(ctx, participant, func(current notificationmodel.Participant, delivered map[int]bool) (*int, error) {
-			return s.dispatchParticipant(ctx, current, delivered)
-		})
-		if dispatchErr != nil {
+		sent, err := s.repo.WithParticipantLock(ctx, participant, s.dispatchParticipant)
+		if err != nil {
 			result.Failed++
-			failures = append(failures, fmt.Errorf("participant %s: %w", participant.UserID, dispatchErr))
+			failures = append(failures, fmt.Errorf("participant %s: %w", participant.UserID, err))
 			continue
 		}
 		if sent {
@@ -78,10 +81,10 @@ func (s *service) DispatchAll(ctx context.Context) (notificationmodel.BatchResul
 			result.Skipped++
 		}
 	}
-	return result, errors.Join(failures...)
+	return result, failures
 }
 
-func (s *service) dispatchParticipant(ctx context.Context, participant notificationmodel.Participant, delivered map[int]bool) (*int, error) {
+func (s *service) dispatchParticipant(ctx context.Context, participant notificationmodel.Participant, delivered notificationmodel.DeliveredThresholds) (*int, error) {
 	energy := rules.EnergyPercent(participant.EnergyPercent, participant.EnergyUpdatedAt, s.now().UTC())
 	selected, ok := templateForEnergy(energy)
 	if !ok {
@@ -91,17 +94,20 @@ func (s *service) dispatchParticipant(ctx context.Context, participant notificat
 		return nil, nil
 	}
 
-	message := notificationmodel.Message{
-		Recipient: participant.Email,
-		Subject:   subject,
-		TextBody:  selected.firstLine + "\n" + selected.secondLine,
-		HTMLBody:  "<p><strong>" + html.EscapeString(selected.firstLine) + "</strong><br>" + html.EscapeString(selected.secondLine) + "</p>",
-	}
-	if err := s.mailer.Send(ctx, message); err != nil {
+	if err := s.mailer.Send(ctx, messageFor(participant.Email, selected)); err != nil {
 		return nil, fmt.Errorf("send energy notification: %w", err)
 	}
 	threshold := selected.threshold
 	return &threshold, nil
+}
+
+func messageFor(recipient string, selected template) notificationmodel.Message {
+	return notificationmodel.Message{
+		Recipient: recipient,
+		Subject:   subject,
+		TextBody:  selected.firstLine + "\n" + selected.secondLine,
+		HTMLBody:  "<p><strong>" + html.EscapeString(selected.firstLine) + "</strong><br>" + html.EscapeString(selected.secondLine) + "</p>",
+	}
 }
 
 func templateForEnergy(energy int) (template, bool) {

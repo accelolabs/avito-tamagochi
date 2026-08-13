@@ -22,11 +22,11 @@ func (r *fakeRepository) TryRunLock(context.Context) (func(), bool, error) {
 	return func() {}, r.acquired, nil
 }
 
-func (r *fakeRepository) ListParticipantIDs(context.Context) ([]notificationmodel.Participant, error) {
+func (r *fakeRepository) ListParticipants(context.Context) ([]notificationmodel.Participant, error) {
 	return r.participants, nil
 }
 
-func (r *fakeRepository) ProcessParticipant(_ context.Context, participant notificationmodel.Participant, dispatch func(notificationmodel.Participant, map[int]bool) (*int, error)) (bool, error) {
+func (r *fakeRepository) WithParticipantLock(ctx context.Context, participant notificationmodel.Participant, handle notificationmodel.ParticipantHandler) (bool, error) {
 	if err := r.processErrors[participant.UserID]; err != nil {
 		return false, err
 	}
@@ -36,7 +36,7 @@ func (r *fakeRepository) ProcessParticipant(_ context.Context, participant notif
 	if r.delivered[participant.UserID] == nil {
 		r.delivered[participant.UserID] = make(map[int]bool)
 	}
-	threshold, err := dispatch(participant, r.delivered[participant.UserID])
+	threshold, err := handle(ctx, participant, notificationmodel.DeliveredThresholds(r.delivered[participant.UserID]))
 	if err != nil {
 		return false, err
 	}

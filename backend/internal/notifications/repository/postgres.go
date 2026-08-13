@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	notificationmodel "github.com/accelolabs/avito-tamagochi/backend/internal/notifications/model"
+	"github.com/google/uuid"
 )
 
 const runLockID int64 = 824015012024
@@ -35,7 +36,7 @@ func (r *PostgreSQLRepository) TryRunLock(ctx context.Context) (func(), bool, er
 	return release, true, nil
 }
 
-func (r *PostgreSQLRepository) ListParticipantIDs(ctx context.Context) ([]notificationmodel.Participant, error) {
+func (r *PostgreSQLRepository) ListParticipants(ctx context.Context) ([]notificationmodel.Participant, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT u.id, u.email, p.energy_percent, p.energy_updated_at
 		FROM users u
@@ -57,10 +58,10 @@ func (r *PostgreSQLRepository) ListParticipantIDs(ctx context.Context) ([]notifi
 	return participants, rows.Err()
 }
 
-func (r *PostgreSQLRepository) ProcessParticipant(
+func (r *PostgreSQLRepository) WithParticipantLock(
 	ctx context.Context,
 	participant notificationmodel.Participant,
-	dispatch func(notificationmodel.Participant, map[int]bool) (*int, error),
+	handle notificationmodel.ParticipantHandler,
 ) (bool, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -68,29 +69,21 @@ func (r *PostgreSQLRepository) ProcessParticipant(
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if err := tx.QueryRowContext(ctx, `
-		SELECT u.email, p.energy_percent, p.energy_updated_at
-		FROM users u
-		JOIN pets p ON p.user_id = u.id
-		WHERE u.id = $1
-		FOR UPDATE OF p
-	`, participant.UserID).Scan(&participant.Email, &participant.EnergyPercent, &participant.EnergyUpdatedAt); err != nil {
-		return false, err
-	}
-	delivered, err := deliveredThresholds(ctx, tx, participant)
+	participant, err = participantForUpdate(ctx, tx, participant)
 	if err != nil {
 		return false, err
 	}
-	threshold, err := dispatch(participant, delivered)
+	delivered, err := deliveredThresholds(ctx, tx, participant.UserID)
+	if err != nil {
+		return false, err
+	}
+	threshold, err := handle(ctx, participant, delivered)
 	if err != nil {
 		return false, err
 	}
 	if threshold != nil {
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO energy_notification_deliveries (user_id, threshold, sent_at)
-			VALUES ($1, $2, CURRENT_TIMESTAMP)
-		`, participant.UserID, *threshold); err != nil {
-			return false, fmt.Errorf("record notification delivery: %w", err)
+		if err := recordDelivery(ctx, tx, participant.UserID, *threshold); err != nil {
+			return false, err
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -99,15 +92,26 @@ func (r *PostgreSQLRepository) ProcessParticipant(
 	return threshold != nil, nil
 }
 
-func deliveredThresholds(ctx context.Context, tx *sql.Tx, participant notificationmodel.Participant) (map[int]bool, error) {
+func participantForUpdate(ctx context.Context, tx *sql.Tx, participant notificationmodel.Participant) (notificationmodel.Participant, error) {
+	err := tx.QueryRowContext(ctx, `
+		SELECT u.email, p.energy_percent, p.energy_updated_at
+		FROM users u
+		JOIN pets p ON p.user_id = u.id
+		WHERE u.id = $1
+		FOR UPDATE OF p
+	`, participant.UserID).Scan(&participant.Email, &participant.EnergyPercent, &participant.EnergyUpdatedAt)
+	return participant, err
+}
+
+func deliveredThresholds(ctx context.Context, tx *sql.Tx, userID uuid.UUID) (notificationmodel.DeliveredThresholds, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT threshold FROM energy_notification_deliveries WHERE user_id = $1
-	`, participant.UserID)
+	`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	delivered := make(map[int]bool)
+	delivered := make(notificationmodel.DeliveredThresholds)
 	for rows.Next() {
 		var threshold int
 		if err := rows.Scan(&threshold); err != nil {
@@ -116,4 +120,15 @@ func deliveredThresholds(ctx context.Context, tx *sql.Tx, participant notificati
 		delivered[threshold] = true
 	}
 	return delivered, rows.Err()
+}
+
+func recordDelivery(ctx context.Context, tx *sql.Tx, userID uuid.UUID, threshold int) error {
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO energy_notification_deliveries (user_id, threshold, sent_at)
+		VALUES ($1, $2, CURRENT_TIMESTAMP)
+	`, userID, threshold)
+	if err != nil {
+		return fmt.Errorf("record notification delivery: %w", err)
+	}
+	return nil
 }

@@ -35,7 +35,7 @@ func TestPostgreSQLRepositorySerializesRunsAndRecordsDelivery(t *testing.T) {
 	}
 	releaseAgain()
 
-	sent, err := repo.ProcessParticipant(context.Background(), participant, func(current notificationmodel.Participant, delivered map[int]bool) (*int, error) {
+	sent, err := repo.WithParticipantLock(context.Background(), participant, func(_ context.Context, current notificationmodel.Participant, delivered notificationmodel.DeliveredThresholds) (*int, error) {
 		if current.Email != participant.Email || delivered[25] {
 			t.Fatalf("current=%+v delivered=%v", current, delivered)
 		}
@@ -46,7 +46,7 @@ func TestPostgreSQLRepositorySerializesRunsAndRecordsDelivery(t *testing.T) {
 		t.Fatalf("first delivery sent=%v error=%v", sent, err)
 	}
 
-	sent, err = repo.ProcessParticipant(context.Background(), participant, func(_ notificationmodel.Participant, delivered map[int]bool) (*int, error) {
+	sent, err = repo.WithParticipantLock(context.Background(), participant, func(_ context.Context, _ notificationmodel.Participant, delivered notificationmodel.DeliveredThresholds) (*int, error) {
 		if !delivered[25] {
 			t.Fatal("recorded threshold is missing")
 		}
