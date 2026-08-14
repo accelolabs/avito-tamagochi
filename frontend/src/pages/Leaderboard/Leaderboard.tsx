@@ -115,19 +115,19 @@ function StreakTable({ title, description, data, userId }: { title: string; desc
   return (
     <BoardSection title={title} description={description}>
       <div className="leaderboard-wrapper"><table className="leaderboard leaderboard--streak">
-        <thead><tr><th>Место</th><th>Игрок</th><th>Текущая серия</th><th>Рекорд</th><th>Начало серии</th><th>Последняя зарядка</th></tr></thead>
+        <thead><tr><th>Место</th><th>Игрок</th><th>Текущая серия</th><th>Начало серии</th><th>Последняя зарядка</th></tr></thead>
         <tbody>
-          {data.entries.length === 0 && <EmptyRow columns={6} />}
+          {data.entries.length === 0 && <EmptyRow columns={5} />}
           {data.entries.map((player) => <StreakRow key={player.userId} player={player} current={player.userId === userId} />)}
         </tbody>
       </table></div>
-      <CurrentUser>{data.currentUser ? <>Ваш результат: #{data.currentUser.rank}, {data.currentUser.displayName}, серия {data.currentUser.currentStreak}, рекорд {data.currentUser.longestStreak}, с {formatDate(data.currentUser.streakStartedAt)}, последняя зарядка {formatDate(data.currentUser.lastChargeDate)}</> : <>У вас пока нет активной серии.</>}</CurrentUser>
+      <CurrentUser>{data.currentUser ? <>Ваш результат: #{data.currentUser.rank}, {data.currentUser.displayName}, серия {data.currentUser.currentStreak}, с {formatDate(data.currentUser.streakStartedAt)}, последняя зарядка {formatDate(data.currentUser.lastChargeDate)}</> : <>У вас пока нет активной серии.</>}</CurrentUser>
     </BoardSection>
   )
 }
 
 function StreakRow({ player, current }: { player: StreakLeaderboardEntry; current: boolean }) {
-  return <tr className={current ? 'leaderboard__row--your-result' : ''}><td>{player.rank}</td><td>{player.displayName}</td><td>{player.currentStreak}</td><td>{player.longestStreak}</td><td>{formatDate(player.streakStartedAt)}</td><td>{formatDate(player.lastChargeDate)}</td></tr>
+  return <tr className={current ? 'leaderboard__row--your-result' : ''}><td>{player.rank}</td><td>{player.displayName}</td><td>{player.currentStreak}</td><td>{formatDate(player.streakStartedAt)}</td><td>{formatDate(player.lastChargeDate)}</td></tr>
 }
 
 function EmptyRow({ columns }: { columns: number }) {

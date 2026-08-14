@@ -141,7 +141,7 @@ export default function Dashboard() {
           <Stat title="Опыта за день" value={`${summary.xpEarned} XP`} accent="purple" />
           <Stat title="Доступно наград" value={String(availableRewards)} accent="green" />
           <Stat title="Место в лидерборде" value={leaderboard?.currentUser ? `#${String(leaderboard.currentUser.rank)}` : 'Нет данных'} accent="pink" />
-          <Stat title="Серия зарядок" value={streak ? `${streak.currentStreak}, рекорд ${streak.longestStreak}` : 'Нет данных'} accent="orange" />
+          <Stat title="Серия зарядок" value={streak ? String(streak.currentStreak) : 'Нет данных'} accent="orange" />
           <Stat title="Опыта за 7 дней" value={`${weeklyLeaderboard?.currentUser?.xpDelta ?? 0} XP`} accent="cyan" />
         </section>
       </div>
