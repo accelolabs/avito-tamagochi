@@ -130,6 +130,7 @@ CI использует `golangci-lint` версии `v2.10.1`. PostgreSQL integ
 - [Исходный кейс](docs/Кейс%201.pdf)
 - [Игровой дизайн](docs/game-design.md)
 - [Игровой API](docs/game-api.md)
+- [Архитектура](docs/architecture.md)
 - [Тестирование](docs/testing.md)
 
 ## Индвидуальный вклад участников.
