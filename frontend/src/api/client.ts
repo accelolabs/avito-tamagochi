@@ -1,4 +1,18 @@
-import type { ApiErrorPayload, Leaderboard, Pet, Reward, Summary, Task, TaskType, User } from './types'
+import type {
+  ApiErrorPayload,
+  ChargeResult,
+  DeltaLeaderboard,
+  Leaderboard,
+  Pet,
+  PetActionResult,
+  Reward,
+  Streak,
+  StreakLeaderboard,
+  Summary,
+  Task,
+  TaskType,
+  User,
+} from './types'
 
 const API_ROOT = '/api/v1'
 
@@ -57,7 +71,9 @@ export const api = {
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   getMe: () => request<User>('/auth/me'),
   getPet: () => request<Pet>('/pet'),
-  chargePet: () => request<Pet>('/pet/actions', { method: 'POST', body: JSON.stringify('charge') }),
+  chargePet: () => request<ChargeResult>('/pet/actions', { method: 'POST', body: JSON.stringify('charge') }),
+  petPet: () => request<PetActionResult>('/pet/actions', { method: 'POST', body: JSON.stringify('pet') }),
+  getStreak: () => request<Streak>('/streak'),
   getTasks: async () => (await request<{ tasks: Task[] }>('/tasks/today')).tasks,
   applyTaskAction: (action: TaskType) =>
     request<{ status: 'applied' }>('/mock-avito/actions', { method: 'POST', body: JSON.stringify(action) }),
@@ -65,4 +81,7 @@ export const api = {
   useReward: (rewardId: string) => request<Reward>(`/rewards/${rewardId}/use`, { method: 'POST' }),
   getSummary: () => request<Summary>('/summary/today'),
   getLeaderboard: () => request<Leaderboard>('/leaderboard'),
+  getWeeklyLeaderboard: () => request<DeltaLeaderboard>('/leaderboard/week'),
+  getMonthlyLeaderboard: () => request<DeltaLeaderboard>('/leaderboard/month'),
+  getStreakLeaderboard: () => request<StreakLeaderboard>('/leaderboard/streak'),
 }

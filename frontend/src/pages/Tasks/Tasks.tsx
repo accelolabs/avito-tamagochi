@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './Tasks.css'
-import { api } from '../../api/client'
+import { ApiError, api } from '../../api/client'
 import type { Task, TaskType } from '../../api/types'
+import GameOverModal from '../../components/GameOverModal/GameOverModal'
 import { useGameEvent } from '../../realtime/RealtimeContext'
 
 const taskContent: Record<TaskType, { title: string; description: string; action: string }> = {
@@ -17,6 +18,7 @@ export default function Tasks() {
   const [pending, setPending] = useState<TaskType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showGameOver, setShowGameOver] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -45,8 +47,17 @@ export default function Tasks() {
     try {
       await api.applyTaskAction(task.type)
       await load()
-    } catch {
-      setError('Не удалось выполнить действие. Попробуйте ещё раз.')
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.status === 409 && caught.code === 'pet_dead') {
+        try {
+          const pet = await api.getPet()
+          if (pet.isDead) {setShowGameOver(true)}
+        } catch {
+          setError('Не удалось обновить состояние питомца.')
+        }
+      } else {
+        setError('Не удалось выполнить действие. Попробуйте ещё раз.')
+      }
     } finally {
       setPending(null)
     }
@@ -71,6 +82,7 @@ export default function Tasks() {
           </div>
         </div>
       </div>
+      {showGameOver && <GameOverModal onClose={() => setShowGameOver(false)} />}
     </div>
   )
 }

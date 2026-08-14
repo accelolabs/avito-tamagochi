@@ -1,78 +1,109 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Dashboard.css'
-import { api } from '../../api/client'
-import type { Leaderboard, Pet, Reward, Summary } from '../../api/types'
+import { ApiError, api } from '../../api/client'
+import type { DeltaLeaderboard, Leaderboard, Pet, Reward, Streak, Summary } from '../../api/types'
+import GameOverModal from '../../components/GameOverModal/GameOverModal'
 import PetVisual, { stageLabel } from '../../components/PetVisual/PetVisual'
 import { useGameEvent } from '../../realtime/RealtimeContext'
 
-const energyLifetimeMs = 48 * 60 * 60 * 1000
-
-function currentEnergy(lastChargedAt: string) {
-  const elapsed = Date.now() - new Date(lastChargedAt).getTime()
-  return Math.max(0, Math.min(100, 100 - Math.trunc(elapsed / energyLifetimeMs * 100)))
-}
+type PetAction = 'charge' | 'pet'
 
 export default function Dashboard() {
   const event = useGameEvent()
   const [pet, setPet] = useState<Pet | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null)
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<DeltaLeaderboard | null>(null)
+  const [streak, setStreak] = useState<Streak | null>(null)
   const [rewards, setRewards] = useState<Reward[]>([])
-  const [energy, setEnergy] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [charging, setCharging] = useState(false)
+  const [pendingAction, setPendingAction] = useState<PetAction | null>(null)
+  const [showGameOver, setShowGameOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const previousDead = useRef<boolean | undefined>(undefined)
+
+  const acceptPet = useCallback((value: Pet) => {
+    if (value.isDead && previousDead.current !== true) {
+      setShowGameOver(true)
+    }
+    previousDead.current = value.isDead
+    setPet(value)
+  }, [])
 
   const load = useCallback(async (showLoading = false) => {
     if (showLoading) {setLoading(true)}
     setError(null)
     try {
-      const [petValue, summaryValue, leaderboardValue, rewardValues] = await Promise.all([
-        api.getPet(), api.getSummary(), api.getLeaderboard(), api.getRewards(),
+      const [petValue, summaryValue, leaderboardValue, weeklyValue, streakValue, rewardValues] = await Promise.all([
+        api.getPet(),
+        api.getSummary(),
+        api.getLeaderboard(),
+        api.getWeeklyLeaderboard(),
+        api.getStreak(),
+        api.getRewards(),
       ])
-      setPet(petValue)
+      acceptPet(petValue)
       setSummary(summaryValue)
       setLeaderboard(leaderboardValue)
+      setWeeklyLeaderboard(weeklyValue)
+      setStreak(streakValue)
       setRewards(rewardValues)
-      setEnergy(currentEnergy(petValue.lastChargedAt))
     } catch {
       setError('Не удалось загрузить состояние питомца.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [acceptPet])
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void load(true) }, 0)
     return () => window.clearTimeout(timer)
   }, [load])
+
   useEffect(() => {
     if (!event) {return}
     const timer = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timer)
   }, [event, load])
+
   useEffect(() => {
-    if (!pet) {return}
-    const update = () => setEnergy(currentEnergy(pet.lastChargedAt))
-    const timer = window.setInterval(update, 30000)
+    const timer = window.setInterval(() => {
+      void api.getPet().then(acceptPet).catch(() => {
+        // A later refresh or WebSocket event will retry; keep the last backend state meanwhile.
+      })
+    }, 30000)
     return () => window.clearInterval(timer)
-  }, [pet])
+  }, [acceptPet])
 
   const availableRewards = useMemo(() => rewards.filter((reward) => reward.status === 'available').length, [rewards])
   const levelProgress = pet ? pet.xp % 100 : 0
 
-  const charge = async () => {
-    setCharging(true)
+  const refreshDeadPet = async () => {
+    try {
+      const value = await api.getPet()
+      acceptPet(value)
+      if (value.isDead) {setShowGameOver(true)}
+    } catch {
+      setError('Не удалось обновить состояние питомца.')
+    }
+  }
+
+  const runAction = async (action: PetAction) => {
+    if (pendingAction !== null) {return}
+    setPendingAction(action)
     setError(null)
     try {
-      const updated = await api.chargePet()
-      setPet(updated)
-      setEnergy(updated.energy)
+      const result = action === 'charge' ? await api.chargePet() : await api.petPet()
+      acceptPet(result.pet)
       await load()
-    } catch {
-      setError('Не удалось зарядить питомца.')
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.status === 409 && caught.code === 'pet_dead') {
+        await refreshDeadPet()
+      } else {
+        setError(action === 'charge' ? 'Не удалось зарядить питомца.' : 'Не удалось погладить питомца.')
+      }
     } finally {
-      setCharging(false)
+      setPendingAction(null)
     }
   }
 
@@ -91,22 +122,30 @@ export default function Dashboard() {
             <div className="dashboard__pet-name">K1-T4</div>
             <div className="dashboard__pet-phase">{stageLabel(pet.stage)}, уровень {pet.level}</div>
             <div className="dashboard__progress-bars">
-              <Progress label="Опыт" value={`${levelProgress}`} percent={levelProgress} kind="xp" />
-              <Progress label="Зарядка" value={`${energy}%`} percent={energy} kind="battery" />
+              <Progress label="Опыт" value={`${levelProgress} / 100 XP`} percent={levelProgress} kind="xp" />
+              <Progress label="Зарядка" value={`${pet.energy}%`} percent={pet.energy} kind="battery" />
             </div>
-            <button className="dashboard__charge" type="button" disabled={charging} onClick={() => { void charge() }}>
-              {charging ? 'Заряжаем...' : 'Зарядить'}
-            </button>
+            <div className="dashboard__actions">
+              <button className="dashboard__action dashboard__action--pet" type="button" disabled={pendingAction !== null} onClick={() => { void runAction('pet') }}>
+                {pendingAction === 'pet' ? 'Гладим...' : 'Погладить'}
+              </button>
+              <button className="dashboard__action dashboard__action--charge" type="button" disabled={pendingAction !== null} onClick={() => { void runAction('charge') }}>
+                {pendingAction === 'charge' ? 'Заряжаем...' : 'Зарядить'}
+              </button>
+            </div>
           </div>
         </section>
 
-        <section className="dashboard__stats" aria-label="Дневная статистика">
-          <Stat title="Задания" value={`${summary.completedTasks} / 3`} accent="blue" />
-          <Stat title="Опыт" value={`${summary.xpEarned} XP`} accent="purple" />
-          <Stat title="Награды" value={String(availableRewards)} accent="green" />
-          <Stat title="Ранг" value={leaderboard?.currentUser ? `#${String(leaderboard.currentUser.rank)}` : 'Нет данных'} accent="pink" />
+        <section className="dashboard__stats" aria-label="Игровая статистика">
+          <Stat title="Задач за день" value={`${summary.completedTasks} / 3`} accent="blue" />
+          <Stat title="Опыта за день" value={`${summary.xpEarned} XP`} accent="purple" />
+          <Stat title="Доступно наград" value={String(availableRewards)} accent="green" />
+          <Stat title="Место в лидерборде" value={leaderboard?.currentUser ? `#${String(leaderboard.currentUser.rank)}` : 'Нет данных'} accent="pink" />
+          <Stat title="Серия зарядок" value={streak ? `${streak.currentStreak}, рекорд ${streak.longestStreak}` : 'Нет данных'} accent="orange" />
+          <Stat title="Опыта за 7 дней" value={`${weeklyLeaderboard?.currentUser?.xpDelta ?? 0} XP`} accent="cyan" />
         </section>
       </div>
+      {showGameOver && <GameOverModal onClose={() => setShowGameOver(false)} />}
     </div>
   )
 }

@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://42plusplus-team.accelolabs.com",
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
       "/ws": {
-        target: "ws://42plusplus-team.accelolabs.com",
+        target: "ws://localhost:8080",
         ws: true,
       },
     },

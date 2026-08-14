@@ -66,8 +66,12 @@ content: '';
 .dashboard__progress-fill { height: 100%; border-radius: 6px; transition: width .4s ease;}
 .dashboard__progress-xp { background: #006398; }
 .dashboard__progress-battery { background: #00BB51; }
-.dashboard__charge { padding: 14px 30px; background: var(--color-primary); border: 0; border-radius: 7px; color: white; display: flex; gap: 7px; font: inherit; font-weight: 700; border-radius: 35% 10% / 35% 10%;  max-width: 170px; max-height: 160px; border: 2px solid #1C1B1B; box-shadow: 4px 4px #1C1B1B;}
-.dashboard__charge:hover:not(:disabled) { background: var(--color-primary-hover); cursor: pointer; }
+.dashboard__actions { display: flex; justify-content: center; gap: 18px; }
+.dashboard__action { padding: 14px 30px; color: white; font: inherit; font-weight: 700; border-radius: 35% 10% / 35% 10%; border: 2px solid #1C1B1B; box-shadow: 4px 4px #1C1B1B; }
+.dashboard__action--charge { background: var(--color-primary); }
+.dashboard__action--pet { color: #1C1B1B; background: white; }
+.dashboard__action:hover:not(:disabled) { filter: brightness(.94); cursor: pointer; }
+.dashboard__action:disabled { opacity: .65; }
 .dashboard__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 14px; }
 .dashboard__stat-card { min-height: 100px; padding: 18px;  display: flex; flex-direction: column; justify-content: space-between; background-color: #F0EDED; border: 2px solid #1C1B1B; box-shadow: 4px 4px #1C1B1B;}
 .dashboard__stat-card h2 { margin: 0; font-size: 12px; text-transform: uppercase; font-family: 'Public Pixel'; font-weight: 500;}
@@ -76,6 +80,8 @@ content: '';
 .dashboard__stat-card--purple h2{ color: #7339C7;}
 .dashboard__stat-card--green h2{ color: #00BB51;}
 .dashboard__stat-card--pink h2{ color: #BA1A1A;}
+.dashboard__stat-card--orange h2{ color: #A65300;}
+.dashboard__stat-card--cyan h2{ color: #007C85;}
 @media (max-width: 1000px) { .dashboard__stats { grid-template-columns: repeat(2, 1fr); } .dashboard__pet-card {flex-direction: column;}}
 @media (max-width: 760px) { .dashboard-page { padding: 150px 0 0; } .dashboard { padding: 16px; } }
 @media (max-width: 500px) { .dashboard__stats { grid-template-columns: 1fr; } }

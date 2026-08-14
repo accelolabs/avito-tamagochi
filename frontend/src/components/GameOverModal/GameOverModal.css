@@ -1,0 +1,6 @@
+.game-over { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(28, 27, 27, .58); }
+.game-over__dialog { width: min(520px, 100%); padding: 30px; background: var(--color-bg-default); border: 3px solid #1c1b1b; border-radius: 12px; box-shadow: 8px 8px #1c1b1b; }
+.game-over__dialog h2 { margin: 0 0 18px; color: #ba1a1a; font-family: 'Public Pixel'; font-size: 24px; line-height: 1.4; }
+.game-over__dialog p { margin: 0 0 24px; font-size: 18px; line-height: 1.55; }
+.game-over__dialog button { padding: 12px 24px; color: white; background: var(--color-primary); border: 2px solid #1c1b1b; border-radius: 35% 10% / 35% 10%; box-shadow: 4px 4px #1c1b1b; font: inherit; font-weight: 700; cursor: pointer; }
+.game-over__dialog button:hover { background: var(--color-primary-hover); }
