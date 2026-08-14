@@ -36,10 +36,10 @@ func (r *PostgreSQLRepository) GetToday(ctx context.Context, userID uuid.UUID, l
 		             AND xp.source = 'charge'
 		       ),
 		       COALESCE(p.xp, 0), COALESCE(p.xp / 100 + 1, 1),
-		       CASE WHEN p.id IS NULL THEN 0 ELSE 100 - LEAST(100, GREATEST(0, FLOOR(
-		           EXTRACT(EPOCH FROM ($3 - p.last_charged_at))
-		           / EXTRACT(EPOCH FROM INTERVAL '48 hours') * 100
-		       )))::int END
+		       CASE WHEN p.id IS NULL THEN 0 ELSE GREATEST(0, LEAST(100,
+		           p.energy_percent - FLOOR(EXTRACT(EPOCH FROM ($3 - p.energy_updated_at))
+		           / EXTRACT(EPOCH FROM INTERVAL '48 hours') * 100)::int
+		       )) END
 		FROM users u
 		LEFT JOIN pets p ON p.user_id = u.id
 		WHERE u.id = $1

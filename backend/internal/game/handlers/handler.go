@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/auth/middleware"
@@ -39,13 +40,17 @@ func (h *Handler) SetRoutes(mux *http.ServeMux) {
 	}
 
 	handle(http.MethodGet, "/api/v1/pet", h.getPet)
-	handle(http.MethodPost, "/api/v1/pet/actions", h.chargePet)
+	handle(http.MethodPost, "/api/v1/pet/actions", h.applyPetAction)
+	handle(http.MethodGet, "/api/v1/streak", h.getStreak)
 	handle(http.MethodGet, "/api/v1/tasks/today", h.getTodayTasks)
 	handle(http.MethodPost, "/api/v1/mock-avito/actions", h.applyMockAction)
 	handle(http.MethodGet, "/api/v1/rewards", h.getRewards)
 	handle(http.MethodPost, "/api/v1/rewards/{rewardID}/use", h.useReward)
 	handle(http.MethodGet, "/api/v1/summary/today", h.getTodaySummary)
 	handle(http.MethodGet, "/api/v1/leaderboard", h.getLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/week", h.getWeeklyLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/month", h.getMonthlyLeaderboard)
+	handle(http.MethodGet, "/api/v1/leaderboard/streak", h.getStreakLeaderboard)
 }
 
 type errorResponse struct {
@@ -63,12 +68,27 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, errorResponse{Code: code, Message: message})
 }
 
+func decodeJSONBody(w http.ResponseWriter, r *http.Request, target any, limit int64) bool {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
+	if err := decoder.Decode(target); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+		return false
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
+		return false
+	}
+	return true
+}
+
 func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gameerrors.ErrInvalidAction):
 		writeError(w, http.StatusBadRequest, "validation_error", "request is invalid")
 	case errors.Is(err, gameerrors.ErrTaskNotAvailable):
 		writeError(w, http.StatusBadRequest, "task_not_available", "task is not available today")
+	case errors.Is(err, gameerrors.ErrPetDead):
+		writeError(w, http.StatusConflict, "pet_dead", "charge the pet before completing tasks")
 	case errors.Is(err, gameerrors.ErrRewardNotFound):
 		writeError(w, http.StatusNotFound, "reward_not_found", "reward was not found")
 	case errors.Is(err, gameerrors.ErrRewardAlreadyUsed):

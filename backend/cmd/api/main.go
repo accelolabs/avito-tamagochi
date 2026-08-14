@@ -28,6 +28,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	maxDatabaseConnections = 25
+	maxDatabaseIdleTime    = 5 * time.Minute
+	maxDatabaseLifetime    = 30 * time.Minute
+)
+
 func main() {
 	port := os.Getenv("APP_PORT")
 	if port == "" {
@@ -42,6 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer func() { _ = db.Close() }()
+	configureDatabasePool(db)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
@@ -61,7 +68,6 @@ func main() {
 	summaryService := gamesummaryservice.New(gamesummaryrepository.New(db), nil)
 	leaderboardService := gameleaderservice.New(gameleaderrepository.New(db))
 	gameHandler := gamehandlers.New(petService, taskService, rewardService, summaryService, leaderboardService, authService)
-
 	mux := http.NewServeMux()
 	authHandler.SetRoutes(mux)
 	gameHandler.SetRoutes(mux)
@@ -77,4 +83,11 @@ func main() {
 	}
 	log.Printf("server started on http://localhost:%s", port)
 	log.Fatal(server.ListenAndServe())
+}
+
+func configureDatabasePool(db *sql.DB) {
+	db.SetMaxOpenConns(maxDatabaseConnections)
+	db.SetMaxIdleConns(maxDatabaseConnections)
+	db.SetConnMaxIdleTime(maxDatabaseIdleTime)
+	db.SetConnMaxLifetime(maxDatabaseLifetime)
 }

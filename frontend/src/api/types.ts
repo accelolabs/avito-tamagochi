@@ -13,6 +13,26 @@ export interface Pet {
   stage: PetStage
   energy: number
   lastChargedAt: string
+  isDead: boolean
+}
+
+export interface ChargeResult {
+  pet: Pet
+  baseChargeXp: number
+  dailyRewardXp: number
+  totalXpAwarded: number
+}
+
+export interface PetActionResult {
+  pet: Pet
+  xpAwarded: 0 | 5
+}
+
+export interface Streak {
+  currentStreak: number
+  longestStreak: number
+  lastChargeDate: string | null
+  nextDailyRewardXp: number
 }
 
 export type TaskType = 'view' | 'favorite' | 'create_listing' | 'create_listing_in_category'
@@ -55,6 +75,30 @@ export interface LeaderboardEntry {
 export interface Leaderboard {
   entries: LeaderboardEntry[]
   currentUser: LeaderboardEntry | null
+}
+
+export interface DeltaLeaderboardEntry extends LeaderboardEntry {
+  xpDelta: number
+}
+
+export interface DeltaLeaderboard {
+  entries: DeltaLeaderboardEntry[]
+  currentUser: DeltaLeaderboardEntry | null
+}
+
+export interface StreakLeaderboardEntry {
+  rank: number
+  userId: string
+  displayName: string
+  currentStreak: number
+  longestStreak: number
+  streakStartedAt: string
+  lastChargeDate: string
+}
+
+export interface StreakLeaderboard {
+  entries: StreakLeaderboardEntry[]
+  currentUser: StreakLeaderboardEntry | null
 }
 
 export interface ApiErrorPayload {

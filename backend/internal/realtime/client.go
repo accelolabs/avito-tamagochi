@@ -42,12 +42,21 @@ func (c *Client) readPump() {
 	for {
 		_, _, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if shouldLogReadError(err) {
 				log.Printf("ws read error: %v", err)
 			}
 			break
 		}
 	}
+}
+
+func shouldLogReadError(err error) bool {
+	return websocket.IsUnexpectedCloseError(
+		err,
+		websocket.CloseNormalClosure,
+		websocket.CloseGoingAway,
+		websocket.CloseAbnormalClosure,
+	)
 }
 
 func (c *Client) writePump() {

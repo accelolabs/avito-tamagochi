@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/game/clock"
 	gameerrors "github.com/accelolabs/avito-tamagochi/backend/internal/game/errors"
@@ -61,12 +60,25 @@ func (s *service) ApplyAction(ctx context.Context, userID uuid.UUID, taskType ta
 	if err != nil {
 		return err
 	}
-	if progress.Completed {
-		return tx.Commit()
-	}
-	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.Pet{ID: uuid.New(), UserID: userID, LastChargedAt: now.Add(-24 * time.Hour), CreatedAt: now, UpdatedAt: now})
+	pet, err := s.petRepo.GetOrCreateForUpdate(ctx, tx, userID, petmodel.NewPet(userID, now))
 	if err != nil {
 		return err
+	}
+	if rules.IsDead(rules.EnergyPercent(pet.EnergyPercent, pet.EnergyUpdatedAt, now)) {
+		if err := s.petRepo.ResetAfterDeath(ctx, tx, pet.ID, userID); err != nil {
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		if s.notify != nil {
+			s.notify.NotifyUser(userID, "pet_updated")
+			s.notify.NotifyUser(userID, "rewards_updated")
+		}
+		return gameerrors.ErrPetDead
+	}
+	if progress.Completed {
+		return tx.Commit()
 	}
 	oldLevel := rules.LevelFromXP(pet.XP)
 	levelReached := false

@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -84,13 +86,44 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 		writeError(w, http.StatusBadRequest, "validation_error", "request body is invalid")
 		return false
 	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeError(w, http.StatusBadRequest, "validation_error", "request body is invalid")
+		return false
+	}
 	return true
 }
 
 func decodeStringObject(data []byte, expectedKeys ...string) (map[string]string, error) {
-	var values map[string]string
-	if err := json.Unmarshal(data, &values); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	opening, err := decoder.Token()
+	if err != nil || opening != json.Delim('{') {
+		return nil, errors.New("JSON value is not an object")
+	}
+	values := make(map[string]string, len(expectedKeys))
+	for decoder.More() {
+		keyToken, err := decoder.Token()
+		if err != nil {
+			return nil, err
+		}
+		key, ok := keyToken.(string)
+		if !ok {
+			return nil, errors.New("JSON object key is not a string")
+		}
+		if _, exists := values[key]; exists {
+			return nil, errors.New("duplicate JSON field")
+		}
+		var value string
+		if err := decoder.Decode(&value); err != nil {
+			return nil, err
+		}
+		values[key] = value
+	}
+	closing, err := decoder.Token()
+	if err != nil {
 		return nil, err
+	}
+	if closing != json.Delim('}') {
+		return nil, errors.New("JSON object is not closed")
 	}
 	if len(values) != len(expectedKeys) {
 		return nil, errors.New("unexpected JSON fields")

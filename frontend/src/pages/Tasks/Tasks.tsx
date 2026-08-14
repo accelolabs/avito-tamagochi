@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './Tasks.css'
-import { api } from '../../api/client'
+import { ApiError, api } from '../../api/client'
 import type { Task, TaskType } from '../../api/types'
+import GameOverModal from '../../components/GameOverModal/GameOverModal'
 import { useGameEvent } from '../../realtime/RealtimeContext'
 
 const taskContent: Record<TaskType, { title: string; description: string; action: string }> = {
@@ -17,6 +18,7 @@ export default function Tasks() {
   const [pending, setPending] = useState<TaskType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showGameOver, setShowGameOver] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -45,8 +47,17 @@ export default function Tasks() {
     try {
       await api.applyTaskAction(task.type)
       await load()
-    } catch {
-      setError('Не удалось выполнить действие. Попробуйте ещё раз.')
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.status === 409 && caught.code === 'pet_dead') {
+        try {
+          const pet = await api.getPet()
+          if (pet.isDead) {setShowGameOver(true)}
+        } catch {
+          setError('Не удалось обновить состояние питомца.')
+        }
+      } else {
+        setError('Не удалось выполнить действие. Попробуйте ещё раз.')
+      }
     } finally {
       setPending(null)
     }
@@ -59,18 +70,19 @@ export default function Tasks() {
       <div className="tasks">
         <header className="tasks__content"><h1 className="tasks__header">Ежедневные задания</h1><p className="tasks__description">Выполняй задания, чтобы развивать питомца</p></header>
         {error && <p className="tasks__error" role="alert">{error}</p>}
-        <section className="tasks__stats">
-          <h2 className="tasks__stats-title">Задания на сегодня</h2>
-          <div className="tasks__progress">
-            <div className="tasks__progress-bar"><div className="tasks__progress-fill" style={{ width: `${tasks.length ? completed / tasks.length * 100 : 0}%` }} /></div>
-            <span className="tasks__progress-label">Выполнено: {completed} из {tasks.length}</span>
+        <div className="tasks__content-container">
+            <h2 className="tasks__stats-title">Задания на сегодня</h2>
+            <div className="tasks__progress">
+              <span className="tasks__progress-label">Выполнено: {completed} из {tasks.length}</span>
+              <div className="tasks__progress-bar"><div className="tasks__progress-fill" style={{ width: `${tasks.length ? completed / tasks.length * 100 : 0}%` }} /></div>
+            </div>
+          <div className="tasks__list">
+            {tasks.length === 0 && !error && <div className="page-state">Сегодня заданий нет.</div>}
+            {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => { void complete(task) }} />)}
           </div>
-        </section>
-        <div className="tasks__list">
-          {tasks.length === 0 && !error && <div className="page-state">Сегодня заданий нет.</div>}
-          {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => { void complete(task) }} />)}
         </div>
       </div>
+      {showGameOver && <GameOverModal onClose={() => setShowGameOver(false)} />}
     </div>
   )
 }

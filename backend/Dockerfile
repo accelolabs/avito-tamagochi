@@ -16,6 +16,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \
     -o /out/migrate \
     ./cmd/migrate
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/seed \
+    ./cmd/seed
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/notifications \
+    ./cmd/notifications
 
 FROM alpine:3.23
 
@@ -23,6 +33,8 @@ RUN adduser -D -H -u 10001 appuser
 
 COPY --from=build /out/api /usr/local/bin/api
 COPY --from=build /out/migrate /usr/local/bin/migrate
+COPY --from=build /out/seed /usr/local/bin/seed
+COPY --from=build /out/notifications /usr/local/bin/notifications
 COPY --from=build /src/migrations /migrations
 
 USER appuser
