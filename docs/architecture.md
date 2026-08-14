@@ -86,8 +86,8 @@ flowchart TB
     migrateContainer -.->|успешное завершение| backendContainer
     seedContainer -->|DATABASE_URL| postgresContainer
     scheduler -->|docker compose run --rm| notificationsContainer
-    notificationsContainer -->|DATABASE_URL| postgresContainer
     notificationsContainer -->|SMTP_ADDRESS :1025| mailpitContainer
+    notificationsContainer -->|DATABASE_URL| postgresContainer
     developer -->|127.0.0.1:8025| mailpitContainer
 
     postgresContainer --- postgresVolume
