@@ -537,8 +537,8 @@ components:
   responses:
     ValidationError:
       description: >-
-        Request body is malformed, contains trailing JSON values or unknown
-        fields, exceeds the endpoint limit, or fails backend validation.
+        Request body is malformed, contains trailing JSON values, unknown or
+        duplicate fields, exceeds the endpoint limit, or fails backend validation.
       content:
         application/json:
           schema:
