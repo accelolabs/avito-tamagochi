@@ -2,12 +2,12 @@
     radial-gradient(
       circle at 20% 30%,
       rgba(115, 57, 199, 0.7) 0%,
-      transparent 60%
+      transparent 40%
     ),
     radial-gradient(
       circle at 80% 70%,
       rgba(241, 155, 18, 0.6) 0%,
-      transparent 60%
+      transparent 40%
     );}
 .dashboard { padding: 32px; display: flex; flex-direction: column; gap: 20px; }
 .dashboard__error { margin: 0; padding: 12px; border-radius: 8px; background: #fff0f1; color: var(--color-default-hover); text-align: center; }
