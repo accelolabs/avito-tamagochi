@@ -1,27 +1,81 @@
-.dashboard-page { min-height: 100vh; padding-left: 256px; background: var(--color-bg); }
+.dashboard-page { min-height: 100vh; padding-left: 256px; background: var(--color-bg); background-image:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(115, 57, 199, 0.7) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(241, 155, 18, 0.6) 0%,
+      transparent 40%
+    );}
 .dashboard { padding: 32px; display: flex; flex-direction: column; gap: 20px; }
 .dashboard__error { margin: 0; padding: 12px; border-radius: 8px; background: #fff0f1; color: var(--color-default-hover); text-align: center; }
-.dashboard__pet-card { background: var(--color-bg-default); padding: 24px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 18px; box-shadow: 0 4px 30px rgba(0, 0, 0, .08); }
-.dashboard__pet-image { width: 256px; height: 256px; border-radius: 50%; overflow: hidden; }
-.dashboard__pet-name { font-size: 18px; color: var(--color-text-secondary); font-weight: 800; }
-.dashboard__pet-phase { padding: 6px 12px; background: var(--color-text-primary); color: var(--color-text-tetriary); border-radius: 6px; }
+.dashboard__pet-card { padding: 24px; display: flex; align-items: center; gap: 18px; }
+.dashboard__pet-image { min-width: 464px; height: 500px;  border: 4px solid #1C1B1B; background-color: var(--color-bg-default); text-align: center; position: relative; z-index: 0;}
+.dashboard__pet-image::before,
+.dashboard__pet-image::after {
+content: '';
+  position: absolute;
+  width: 50px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(200, 200, 200, 0.5);
+  transform: rotate(-10deg);
+  pointer-events: none;
+  z-index: 100;
+}
+.dashboard__pet-image::before {
+    right: -20px;
+    top: -20px;
+}
+.dashboard__pet-image::after {
+    left: -20px;
+    bottom: -20px;
+}
+.dashboard__pet-name { font-size: 18px; color: var(--color-text-secondary); font-weight: 800; font-family: 'Vectroid'; font-size: 65px; color: #1C1B1B;}
+.dashboard__info {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+.dashboard__info .dashboard__pet-name {
+    font-family: 'Public Pixel';
+    font-size: 56px;
+}
+.dashboard__pet-phase { padding: 20px 0 10px 0; color: #006398; font-weight: 700; font-size: 20px; border-bottom: 4px solid #1C1B1B;}
 .dashboard__progress-bars { width: 100%; display: flex; flex-direction: column; gap: 18px; }
-.dashboard__progress { width: min(450px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 7px; }
+.dashboard__progress { width: min(450px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 7px; border: 2px solid #1C1B1B; font-family: 'Public Pixel'; padding: 16px;}
 .dashboard__progress-info { display: flex; justify-content: space-between; gap: 20px; font-size: 14px; color: var(--color-text-secondary); font-weight: 600; }
-.dashboard__progress-bar { width: 100%; height: 12px; background: var(--color-progressbar-bg); border-radius: 6px; overflow: hidden; }
-.dashboard__progress-fill { height: 100%; border-radius: 6px; transition: width .4s ease; }
-.dashboard__progress-xp { background: var(--color-secondary); }
-.dashboard__progress-battery { background: var(--color-primary); }
-.dashboard__charge { padding: 14px 30px; background: var(--color-primary); border: 0; border-radius: 7px; color: white; display: flex; gap: 7px; font: inherit; font-weight: 700; }
+.dashboard__progress-bar { width: 100%; height: 12px; background: var(--color-progressbar-bg); border-radius: 6px; overflow: hidden; border: 2px solid #1C1B1B;}
+.dashboard__progress-bars > :first-child {
+    background-color: #93CCFF;
+}
+.dashboard__progress-bars > :last-child {
+    background-color: #31E36B;
+}
+.dashboard__progress-bars > div {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 4px 4px #1C1B1B;
+}
+.dashboard__progress-fill { height: 100%; border-radius: 6px; transition: width .4s ease;}
+.dashboard__progress-xp { background: #006398; }
+.dashboard__progress-battery { background: #00BB51; }
+.dashboard__charge { padding: 14px 30px; background: var(--color-primary); border: 0; border-radius: 7px; color: white; display: flex; gap: 7px; font: inherit; font-weight: 700; border-radius: 35% 10% / 35% 10%;  max-width: 170px; max-height: 160px; border: 2px solid #1C1B1B; box-shadow: 4px 4px #1C1B1B;}
 .dashboard__charge:hover:not(:disabled) { background: var(--color-primary-hover); cursor: pointer; }
-.dashboard__stats { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; }
-.dashboard__stat-card { min-height: 100px; border-radius: 12px; padding: 18px; color: white; display: flex; flex-direction: column; justify-content: space-between; }
-.dashboard__stat-card h2 { margin: 0; font-size: 12px; text-transform: uppercase; }
+.dashboard__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 14px; }
+.dashboard__stat-card { min-height: 100px; padding: 18px;  display: flex; flex-direction: column; justify-content: space-between; background-color: #F0EDED; border: 2px solid #1C1B1B; box-shadow: 4px 4px #1C1B1B;}
+.dashboard__stat-card h2 { margin: 0; font-size: 12px; text-transform: uppercase; font-family: 'Public Pixel'; font-weight: 500;}
 .dashboard__stat-card p { margin: 0; font-size: 26px; font-weight: 800; }
-.dashboard__stat-card--purple { background: var(--color-secondary); }
-.dashboard__stat-card--blue { background: var(--color-primary); }
-.dashboard__stat-card--green { background: var(--color-tetriary); }
-.dashboard__stat-card--pink { background: var(--color-default-hover); }
-@media (max-width: 1000px) { .dashboard__stats { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 760px) { .dashboard-page { padding: 118px 0 0; } .dashboard { padding: 16px; } }
-@media (max-width: 500px) { .dashboard__stats { grid-template-columns: 1fr; } .dashboard__pet-image { width: 210px; height: 210px; } }
+.dashboard__stat-card--blue h2{ color: #006398;}
+.dashboard__stat-card--purple h2{ color: #7339C7;}
+.dashboard__stat-card--green h2{ color: #00BB51;}
+.dashboard__stat-card--pink h2{ color: #BA1A1A;}
+@media (max-width: 1000px) { .dashboard__stats { grid-template-columns: repeat(2, 1fr); } .dashboard__pet-card {flex-direction: column;}}
+@media (max-width: 760px) { .dashboard-page { padding: 150px 0 0; } .dashboard { padding: 16px; } }
+@media (max-width: 500px) { .dashboard__stats { grid-template-columns: 1fr; } }

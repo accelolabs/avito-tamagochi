@@ -59,16 +59,16 @@ export default function Tasks() {
       <div className="tasks">
         <header className="tasks__content"><h1 className="tasks__header">Ежедневные задания</h1><p className="tasks__description">Выполняй задания, чтобы развивать питомца</p></header>
         {error && <p className="tasks__error" role="alert">{error}</p>}
-        <section className="tasks__stats">
-          <h2 className="tasks__stats-title">Задания на сегодня</h2>
-          <div className="tasks__progress">
-            <div className="tasks__progress-bar"><div className="tasks__progress-fill" style={{ width: `${tasks.length ? completed / tasks.length * 100 : 0}%` }} /></div>
-            <span className="tasks__progress-label">Выполнено: {completed} из {tasks.length}</span>
+        <div className="tasks__content-container">
+            <h2 className="tasks__stats-title">Задания на сегодня</h2>
+            <div className="tasks__progress">
+              <span className="tasks__progress-label">Выполнено: {completed} из {tasks.length}</span>
+              <div className="tasks__progress-bar"><div className="tasks__progress-fill" style={{ width: `${tasks.length ? completed / tasks.length * 100 : 0}%` }} /></div>
+            </div>
+          <div className="tasks__list">
+            {tasks.length === 0 && !error && <div className="page-state">Сегодня заданий нет.</div>}
+            {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => { void complete(task) }} />)}
           </div>
-        </section>
-        <div className="tasks__list">
-          {tasks.length === 0 && !error && <div className="page-state">Сегодня заданий нет.</div>}
-          {tasks.map((task) => <TaskItem key={task.type} task={task} pending={pending === task.type} onAction={() => { void complete(task) }} />)}
         </div>
       </div>
     </div>

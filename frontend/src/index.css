@@ -4,3 +4,11 @@ html { background: var(--color-bg); }
 body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--color-text-primary); background: var(--color-bg); }
 button, input { font-family: inherit; }
 * { box-sizing: border-box; }
+
+@font-face {
+  font-family: 'Public Pixel';
+  src: url('/fonts/PublicPixel.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
